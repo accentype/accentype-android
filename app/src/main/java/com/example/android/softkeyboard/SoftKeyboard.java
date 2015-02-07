@@ -262,11 +262,6 @@ public class SoftKeyboard extends InputMethodService
         mInputView.setSubtypeOnSpaceKey(subtype);
     }
 
-    @Override
-    public void onCurrentInputMethodSubtypeChanged(InputMethodSubtype subtype) {
-        mInputView.setSubtypeOnSpaceKey(subtype);
-    }
-
     /**
      * Deal with the editor reporting movement of its cursor.
      */
