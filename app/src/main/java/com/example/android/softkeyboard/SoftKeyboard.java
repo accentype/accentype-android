@@ -31,7 +31,6 @@ import android.view.inputmethod.CompletionInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-import android.view.inputmethod.InputMethodSubtype;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,6 +77,8 @@ public class SoftKeyboard extends InputMethodService
     private LatinKeyboard mCurKeyboard;
     
     private String mWordSeparators;
+
+    private LanguageModel mModel;
     
     /**
      * Main initialization of the input method component.  Be sure to call
@@ -87,6 +88,7 @@ public class SoftKeyboard extends InputMethodService
         super.onCreate();
         mInputMethodManager = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
         mWordSeparators = getResources().getString(R.string.word_separators);
+        mModel = new LanguageModel(this, "model0_3");
     }
     
     /**
