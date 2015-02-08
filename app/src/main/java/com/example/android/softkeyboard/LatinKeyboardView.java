@@ -21,7 +21,6 @@ import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.Keyboard.Key;
 import android.inputmethodservice.KeyboardView;
 import android.util.AttributeSet;
-import android.view.inputmethod.InputMethodSubtype;
 
 public class LatinKeyboardView extends KeyboardView {
 
