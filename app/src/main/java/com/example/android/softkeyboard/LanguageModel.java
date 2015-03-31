@@ -19,19 +19,18 @@ public class LanguageModel {
     private int mNumBitPerHashEntryCount;
     private int mNumBitPerAccStringLength;
 
-    public LanguageModel(Context context, String fileName)
+    public LanguageModel(Context context, InputStream stream)
     {
-        mContext = context;
-        Initialize(fileName);
+        mStream = stream;
+
+        this.Initialize();
     }
 
-    private void Initialize(String fileName)
+    private void Initialize()
     {
-        try
-        {
-            mStream = mContext.getAssets().open(fileName);
-            byte[] bytes = new byte[4];
+        byte[] bytes = new byte[4];
 
+        try {
             mStream.read(bytes, 0, bytes.length);
             mModelVersion = byteArrayToInt(bytes);
 

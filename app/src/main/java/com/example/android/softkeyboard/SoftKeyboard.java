@@ -31,7 +31,10 @@ import android.view.inputmethod.CompletionInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import com.android.vending.expansion.zipfile.*;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,8 +81,12 @@ public class SoftKeyboard extends InputMethodService
     
     private String mWordSeparators;
 
-    private LanguageModel mModel;
-    
+    private LanguageModel mModel1;
+    private LanguageModel mModel2;
+    private LanguageModel mModel3;
+
+    private ZipResourceFile mExpansionFile;
+
     /**
      * Main initialization of the input method component.  Be sure to call
      * to super class.
@@ -88,7 +95,18 @@ public class SoftKeyboard extends InputMethodService
         super.onCreate();
         mInputMethodManager = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
         mWordSeparators = getResources().getString(R.string.word_separators);
-        mModel = new LanguageModel(this, "model0_3");
+
+        try
+        {
+            // Get a ZipResourceFile representing a merger of both the main and patch files
+            mExpansionFile = APKExpansionSupport.getAPKExpansionZipFile(this, 1, -1);
+
+            // Get an input stream for a known file inside the expansion file ZIPs
+            mModel1 = new LanguageModel(this, mExpansionFile.getInputStream("model1_1.at"));
+            mModel2 = new LanguageModel(this, mExpansionFile.getInputStream("model1_2.at"));
+            mModel3 = new LanguageModel(this, mExpansionFile.getInputStream("model1_3.at"));
+        }
+        catch (IOException ex) { }
     }
     
     /**
