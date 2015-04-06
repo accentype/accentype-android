@@ -31,10 +31,11 @@ import android.view.inputmethod.CompletionInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-import com.android.vending.expansion.zipfile.*;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -81,12 +82,6 @@ public class SoftKeyboard extends InputMethodService
     
     private String mWordSeparators;
 
-    private LanguageModel mModel1;
-    private LanguageModel mModel2;
-    private LanguageModel mModel3;
-
-    private ZipResourceFile mExpansionFile;
-
     /**
      * Main initialization of the input method component.  Be sure to call
      * to super class.
@@ -95,18 +90,6 @@ public class SoftKeyboard extends InputMethodService
         super.onCreate();
         mInputMethodManager = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
         mWordSeparators = getResources().getString(R.string.word_separators);
-
-        try
-        {
-            // Get a ZipResourceFile representing a merger of both the main and patch files
-            mExpansionFile = APKExpansionSupport.getAPKExpansionZipFile(this, 1, -1);
-
-            // Get an input stream for a known file inside the expansion file ZIPs
-            mModel1 = new LanguageModel(this, mExpansionFile.getInputStream("model1_1.at"));
-            mModel2 = new LanguageModel(this, mExpansionFile.getInputStream("model1_2.at"));
-            mModel3 = new LanguageModel(this, mExpansionFile.getInputStream("model1_3.at"));
-        }
-        catch (IOException ex) { }
     }
     
     /**
@@ -563,8 +546,15 @@ public class SoftKeyboard extends InputMethodService
     private void updateCandidates() {
         if (!mCompletionOn) {
             if (mComposing.length() > 0) {
+                String[][] wordChoices = predict(mComposing);
+                StringBuilder prediction = new StringBuilder();
+                prediction.setLength(0);
+                for (int i = 0; i < wordChoices.length; i++) {
+                    prediction.append(wordChoices[i][0]);
+                    prediction.append(" ");
+                }
                 ArrayList<String> list = new ArrayList<String>();
-                list.add(mComposing.toString());
+                list.add(prediction.toString());
                 setSuggestions(list, true, true);
             } else {
                 setSuggestions(null, false, false);
@@ -721,5 +711,45 @@ public class SoftKeyboard extends InputMethodService
     }
     
     public void onRelease(int primaryCode) {
+    }
+
+    public String[][] predict(StringBuilder query) {
+        String SERVERIP = "accentype.cloudapp.net";
+//        String SERVERIP = "10.0.3.2";
+        int SERVERPORT = 10100;
+
+        try {
+            InetAddress serverAddr = InetAddress.getByName(SERVERIP);
+            DatagramSocket socket = new DatagramSocket();
+
+            byte[] buf = query.toString().getBytes("US-ASCII");
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, serverAddr, SERVERPORT);
+            socket.send(packet);
+
+            byte[] replyBuf = new byte[65536];
+            DatagramPacket replyPacket = new DatagramPacket(replyBuf, replyBuf.length);
+            socket.receive(replyPacket);
+
+            int index = 0;
+            byte numWords = replyBuf[index++];
+
+            String[][] wordChoices = new String[numWords][];
+            for (int i = 0; i < numWords; i++) {
+                byte numChoices = replyBuf[index++];
+                wordChoices[i] = new String[numChoices];
+                for (int j = 0; j < numChoices; j++) {
+                    byte choiceByteLength = replyBuf[index++];
+                    wordChoices[i][j] = new String(replyBuf, index, choiceByteLength, "UTF-8");
+                    index += choiceByteLength;
+                }
+            }
+            socket.close();
+
+            return wordChoices;
+        }
+        catch (Exception e) {
+            // TODO: Handle exception
+        }
+        return null;
     }
 }
