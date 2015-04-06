@@ -4,6 +4,7 @@ import android.content.Context;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 
 /**
  * Created by lhoang on 2/8/2015.
@@ -19,18 +20,21 @@ public class LanguageModel {
     private int mNumBitPerHashEntryCount;
     private int mNumBitPerAccStringLength;
 
+    private ArrayList<String> mAccentCodeStrings;
+    private ArrayList<Integer> mAccentCodeCounts;
+
     public LanguageModel(Context context, InputStream stream)
     {
         mStream = stream;
 
-        this.Initialize();
+        this.initialize();
     }
 
-    private void Initialize()
+    private void initialize()
     {
-        byte[] bytes = new byte[4];
-
         try {
+            byte[] bytes = new byte[4];
+
             mStream.read(bytes, 0, bytes.length);
             mModelVersion = byteArrayToInt(bytes);
 
@@ -45,6 +49,38 @@ public class LanguageModel {
 
             mStream.read(bytes, 0, bytes.length);
             mNumBitPerAccStringLength = byteArrayToInt(bytes);
+
+            LanguageConstruct languageConstruct = LanguageConstruct.getInstance();
+
+            // Load accent code string lookups
+            mAccentCodeStrings = new ArrayList<>();
+            mStream.read(bytes, 0, bytes.length);
+            int numAsciiCodeStrings = byteArrayToInt(bytes);
+            for (int i = 0; i < numAsciiCodeStrings; i++) {
+                mStream.read(bytes, 0, 1);
+
+                byte[] asciiCodeBytes = new byte[bytes[0]];
+                mStream.read(asciiCodeBytes, 0, asciiCodeBytes.length);
+
+                String asciiCodeString = new String(asciiCodeBytes, "US-ASCII");
+
+                String accentString = "";
+                for (int j = 0; j < asciiCodeString.length(); j++)
+                {
+                    accentString += languageConstruct.AsciiToAccentMap.get((int)asciiCodeString.charAt(j));
+                }
+
+                mAccentCodeStrings.add(accentString);
+            }
+
+            // Load accent code count lookups
+            mAccentCodeCounts = new ArrayList<>();
+            mStream.read(bytes, 0, bytes.length);
+            int numAsciiCodeCounts = byteArrayToInt(bytes);
+            for (int i = 0; i < numAsciiCodeCounts; i++) {
+                mStream.read(bytes, 0, bytes.length);
+                mAccentCodeCounts.add(byteArrayToInt(bytes));
+            }
         }
         catch (IOException e) {
             // TODO: Handle exception
