@@ -672,7 +672,7 @@ public class SoftKeyboard extends InputMethodService
     public void pickDefaultCandidate() {
         pickSuggestionManually(0);
     }
-    
+
     public void pickSuggestionManually(int index) {
         if (mCompletionOn && mCompletions != null && index >= 0
                 && index < mCompletions.length) {
@@ -686,7 +686,8 @@ public class SoftKeyboard extends InputMethodService
             // If we were generating candidate suggestions for the current
             // text, we would commit one of them here.  But for this sample,
             // we will just commit the current text.
-            commitTyped(getCurrentInputConnection());
+            String prediction = mCandidateView.getSuggestions().get(0);
+            getCurrentInputConnection().commitText(prediction, prediction.length());
         }
     }
     
@@ -721,6 +722,8 @@ public class SoftKeyboard extends InputMethodService
         try {
             InetAddress serverAddr = InetAddress.getByName(SERVERIP);
             DatagramSocket socket = new DatagramSocket();
+
+            socket.setSoTimeout(2000);
 
             byte[] buf = query.toString().getBytes("US-ASCII");
             DatagramPacket packet = new DatagramPacket(buf, buf.length, serverAddr, SERVERPORT);

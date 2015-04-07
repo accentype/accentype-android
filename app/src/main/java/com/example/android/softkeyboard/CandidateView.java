@@ -251,6 +251,11 @@ public class CandidateView extends View {
         requestLayout();
     }
 
+    public List<String> getSuggestions()
+    {
+        return mSuggestions;
+    }
+
     public void clear() {
         mSuggestions = EMPTY_LIST;
         mTouchX = OUT_OF_BOUNDS;
