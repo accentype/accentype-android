@@ -546,15 +546,21 @@ public class SoftKeyboard extends InputMethodService
     private void updateCandidates() {
         if (!mCompletionOn) {
             if (mComposing.length() > 0) {
+                ArrayList<String> list = new ArrayList<>();
                 String[][] wordChoices = predict(mComposing);
-                StringBuilder prediction = new StringBuilder();
-                prediction.setLength(0);
-                for (int i = 0; i < wordChoices.length; i++) {
-                    prediction.append(wordChoices[i][0]);
-                    prediction.append(" ");
+                if (wordChoices == null) {
+                    list.add(mComposing.toString());
                 }
-                ArrayList<String> list = new ArrayList<String>();
-                list.add(prediction.toString());
+                else
+                {
+                    StringBuilder prediction = new StringBuilder();
+                    prediction.setLength(0);
+                    for (int i = 0; i < wordChoices.length; i++) {
+                        prediction.append(wordChoices[i][0]);
+                        prediction.append(" ");
+                    }
+                    list.add(prediction.toString());
+                }
                 setSuggestions(list, true, true);
             } else {
                 setSuggestions(null, false, false);
@@ -723,7 +729,7 @@ public class SoftKeyboard extends InputMethodService
             InetAddress serverAddr = InetAddress.getByName(SERVERIP);
             DatagramSocket socket = new DatagramSocket();
 
-            socket.setSoTimeout(2000);
+            socket.setSoTimeout(500);
 
             byte[] buf = query.toString().getBytes("US-ASCII");
             DatagramPacket packet = new DatagramPacket(buf, buf.length, serverAddr, SERVERPORT);
