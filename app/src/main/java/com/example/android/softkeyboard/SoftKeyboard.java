@@ -67,6 +67,7 @@ public class SoftKeyboard extends InputMethodService
     private CompletionInfo[] mCompletions;
     
     private StringBuilder mComposing = new StringBuilder();
+    private List<String> mPredictions;
     private boolean mPredictionOn;
     private boolean mCompletionOn;
     private int mLastDisplayWidth;
@@ -152,6 +153,7 @@ public class SoftKeyboard extends InputMethodService
         // Reset our state.  We want to do this even if restarting, because
         // the underlying state of the text editor could have changed in any way.
         mComposing.setLength(0);
+        updatePredictions();
         updateCandidates();
         
         if (!restarting) {
@@ -242,6 +244,7 @@ public class SoftKeyboard extends InputMethodService
         
         // Clear current composing text and candidates.
         mComposing.setLength(0);
+        updatePredictions();
         updateCandidates();
         
         // We only hide the candidates window when finishing input on
@@ -277,6 +280,7 @@ public class SoftKeyboard extends InputMethodService
         if (mComposing.length() > 0 && (newSelStart != candidatesEnd
                 || newSelEnd != candidatesEnd)) {
             mComposing.setLength(0);
+            updatePredictions();
             updateCandidates();
             InputConnection ic = getCurrentInputConnection();
             if (ic != null) {
@@ -438,6 +442,7 @@ public class SoftKeyboard extends InputMethodService
         if (mComposing.length() > 0) {
             inputConnection.commitText(mComposing, mComposing.length());
             mComposing.setLength(0);
+            updatePredictions();
             updateCandidates();
         }
     }
@@ -547,19 +552,14 @@ public class SoftKeyboard extends InputMethodService
         if (!mCompletionOn) {
             if (mComposing.length() > 0) {
                 ArrayList<String> list = new ArrayList<>();
-                String[][] wordChoices = predict(mComposing);
-                if (wordChoices == null) {
+                if (mPredictions == null) {
                     list.add(mComposing.toString());
                 }
                 else
                 {
-                    StringBuilder prediction = new StringBuilder();
-                    prediction.setLength(0);
-                    for (int i = 0; i < wordChoices.length; i++) {
-                        prediction.append(wordChoices[i][0]);
-                        prediction.append(" ");
+                    for (int i = 0; i < mPredictions.size(); i++) {
+                        list.add(mPredictions.get(i));
                     }
-                    list.add(prediction.toString());
                 }
                 setSuggestions(list, true, true);
             } else {
@@ -567,7 +567,48 @@ public class SoftKeyboard extends InputMethodService
             }
         }
     }
-    
+
+    private void updatePredictions() {
+        if (mComposing.length() > 0) {
+            String[][] choices = predict(mComposing);
+            if (choices != null) {
+
+                int[] bins = new int[choices.length + 1];
+                int totalChoices = 1;
+                for (int i = 0; i < choices.length; i++) {
+                    bins[i] = totalChoices;
+                    totalChoices *= choices[i].length;
+                    bins[i + 1] = totalChoices;
+                }
+                int maxNumPredictions = choices.length < 3 ? 5 : 3;
+                int numPredictions = Math.min(maxNumPredictions, totalChoices);
+
+                mPredictions = new ArrayList<>(numPredictions);
+                for (int p = 0; p < numPredictions; p++) {
+                    StringBuilder prediction = new StringBuilder();
+                    for (int i = 0; i < choices.length; i++) {
+                        int ind = (p % bins[i + 1]) / bins[i];
+                        prediction.append(choices[i][ind]);
+                        if (i < choices.length - 1) {
+                            prediction.append(" ");
+                        }
+                    }
+                    mPredictions.add(prediction.toString());
+                }
+            }
+        }
+        else {
+            mPredictions = null;
+        }
+    }
+
+    private String getTopPrediction() {
+        if (mPredictions != null) {
+            return mPredictions.get(0);
+        }
+        return mComposing.toString();
+    }
+
     public void setSuggestions(List<String> suggestions, boolean completions,
             boolean typedWordValid) {
         if (suggestions != null && suggestions.size() > 0) {
@@ -584,10 +625,12 @@ public class SoftKeyboard extends InputMethodService
         final int length = mComposing.length();
         if (length > 1) {
             mComposing.delete(length - 1, length);
-            getCurrentInputConnection().setComposingText(mComposing, 1);
+            updatePredictions();
+            getCurrentInputConnection().setComposingText(this.getTopPrediction(), 1);
             updateCandidates();
         } else if (length > 0) {
             mComposing.setLength(0);
+            updatePredictions();
             getCurrentInputConnection().commitText("", 0);
             updateCandidates();
         } else {
@@ -625,7 +668,8 @@ public class SoftKeyboard extends InputMethodService
         }
         if ((isAlphabet(primaryCode) || isWordSeparator(primaryCode)) && mPredictionOn) {
             mComposing.append((char) primaryCode);
-            getCurrentInputConnection().setComposingText(mComposing, 1);
+            updatePredictions();
+            getCurrentInputConnection().setComposingText(this.getTopPrediction(), 1);
             updateShiftKeyState(getCurrentInputEditorInfo());
             updateCandidates();
         } else {
@@ -689,10 +733,7 @@ public class SoftKeyboard extends InputMethodService
             }
             updateShiftKeyState(getCurrentInputEditorInfo());
         } else if (mComposing.length() > 0) {
-            // If we were generating candidate suggestions for the current
-            // text, we would commit one of them here.  But for this sample,
-            // we will just commit the current text.
-            String prediction = mCandidateView.getSuggestions().get(0);
+            String prediction = mCandidateView.getSuggestions().get(index);
             getCurrentInputConnection().commitText(prediction, prediction.length());
         }
     }
