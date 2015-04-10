@@ -1,0 +1,6 @@
+Crash when too many words are typed within one go, possibly because the total number of word choices is way too big. 
+Fixed whitespace issues where typing such characters don't show up in composing text because prediction auto trims whitespace chars
+Search button or Enter button don't work
+Add vibration to keys
+Change color schemes to make keyboard look nicer
+Change layout to make keys slightly smaller and spaced out
