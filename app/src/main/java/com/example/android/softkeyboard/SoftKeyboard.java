@@ -20,6 +20,7 @@ import android.app.Dialog;
 import android.inputmethodservice.InputMethodService;
 import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
+import android.os.AsyncTask;
 import android.os.IBinder;
 import android.text.InputType;
 import android.text.method.MetaKeyKeyListener;
@@ -46,7 +47,7 @@ import java.util.List;
  * a basic example for how you would get started writing an input method, to
  * be fleshed out as appropriate.
  */
-public class SoftKeyboard extends InputMethodService 
+public class SoftKeyboard extends InputMethodService
         implements KeyboardView.OnKeyboardActionListener {
     static final boolean DEBUG = false;
     
@@ -570,43 +571,11 @@ public class SoftKeyboard extends InputMethodService
 
     private void updatePredictions() {
         if (mComposing.length() > 0) {
-            String[][] choices = predict(mComposing);
-            if (choices != null) {
-
-                int[] bins = new int[choices.length + 1];
-                int totalChoices = 1;
-                for (int i = 0; i < choices.length; i++) {
-                    bins[i] = totalChoices;
-                    totalChoices *= choices[i].length;
-                    bins[i + 1] = totalChoices;
-                }
-                int maxNumPredictions = choices.length < 3 ? 5 : 3;
-                int numPredictions = Math.min(maxNumPredictions, totalChoices);
-
-                mPredictions = new ArrayList<>(numPredictions);
-                for (int p = 0; p < numPredictions; p++) {
-                    StringBuilder prediction = new StringBuilder();
-                    for (int i = 0; i < choices.length; i++) {
-                        int ind = (p % bins[i + 1]) / bins[i];
-                        prediction.append(choices[i][ind]);
-                        if (i < choices.length - 1) {
-                            prediction.append(" ");
-                        }
-                    }
-                    mPredictions.add(prediction.toString());
-                }
-            }
+            new Predictor().execute(mComposing);
         }
         else {
             mPredictions = null;
         }
-    }
-
-    private String getTopPrediction() {
-        if (mPredictions != null) {
-            return mPredictions.get(0);
-        }
-        return mComposing.toString();
     }
 
     public void setSuggestions(List<String> suggestions, boolean completions,
@@ -626,7 +595,7 @@ public class SoftKeyboard extends InputMethodService
         if (length > 1) {
             mComposing.delete(length - 1, length);
             updatePredictions();
-            getCurrentInputConnection().setComposingText(this.getTopPrediction(), 1);
+            getCurrentInputConnection().setComposingText(mComposing, 1);
             updateCandidates();
         } else if (length > 0) {
             mComposing.setLength(0);
@@ -669,7 +638,7 @@ public class SoftKeyboard extends InputMethodService
         if ((isAlphabet(primaryCode) || isWordSeparator(primaryCode)) && mPredictionOn) {
             mComposing.append((char) primaryCode);
             updatePredictions();
-            getCurrentInputConnection().setComposingText(this.getTopPrediction(), 1);
+            getCurrentInputConnection().setComposingText(mComposing, 1);
             updateShiftKeyState(getCurrentInputEditorInfo());
             updateCandidates();
         } else {
@@ -761,45 +730,91 @@ public class SoftKeyboard extends InputMethodService
     public void onRelease(int primaryCode) {
     }
 
-    public String[][] predict(StringBuilder query) {
-        String SERVERIP = "accentype.cloudapp.net";
-//        String SERVERIP = "10.0.3.2";
-        int SERVERPORT = 10100;
+    private class Predictor extends AsyncTask<StringBuilder, Void, List<String>> {
+        /** The system calls this to perform work in a worker thread and
+         * delivers it the parameters given to AsyncTask.execute() */
+        protected List<String> doInBackground(StringBuilder... composing) {
+            String[][] choices = predict(composing[0]);
+            if (choices != null) {
 
-        try {
-            InetAddress serverAddr = InetAddress.getByName(SERVERIP);
-            DatagramSocket socket = new DatagramSocket();
-
-            socket.setSoTimeout(500);
-
-            byte[] buf = query.toString().getBytes("US-ASCII");
-            DatagramPacket packet = new DatagramPacket(buf, buf.length, serverAddr, SERVERPORT);
-            socket.send(packet);
-
-            byte[] replyBuf = new byte[65536];
-            DatagramPacket replyPacket = new DatagramPacket(replyBuf, replyBuf.length);
-            socket.receive(replyPacket);
-
-            int index = 0;
-            byte numWords = replyBuf[index++];
-
-            String[][] wordChoices = new String[numWords][];
-            for (int i = 0; i < numWords; i++) {
-                byte numChoices = replyBuf[index++];
-                wordChoices[i] = new String[numChoices];
-                for (int j = 0; j < numChoices; j++) {
-                    byte choiceByteLength = replyBuf[index++];
-                    wordChoices[i][j] = new String(replyBuf, index, choiceByteLength, "UTF-8");
-                    index += choiceByteLength;
+                int[] bins = new int[choices.length + 1];
+                int totalChoices = 1;
+                for (int i = 0; i < choices.length; i++) {
+                    bins[i] = totalChoices;
+                    totalChoices *= choices[i].length;
+                    bins[i + 1] = totalChoices;
                 }
-            }
-            socket.close();
+                int maxNumPredictions = choices.length < 3 ? 5 : 3;
+                int numPredictions = Math.min(maxNumPredictions, totalChoices);
 
-            return wordChoices;
+                List<String> predictions = new ArrayList<>(numPredictions);
+                for (int p = 0; p < numPredictions; p++) {
+                    StringBuilder prediction = new StringBuilder();
+                    for (int i = 0; i < choices.length; i++) {
+                        int ind = (p % bins[i + 1]) / bins[i];
+                        prediction.append(choices[i][ind]);
+                        if (i < choices.length - 1) {
+                            prediction.append(" ");
+                        }
+                    }
+                    predictions.add(prediction.toString());
+                }
+
+                return predictions;
+            }
+            return null;
         }
-        catch (Exception e) {
-            // TODO: Handle exception
+
+        /** The system calls this to perform work in the UI thread and delivers
+         * the result from doInBackground() */
+        protected void onPostExecute(List<String> predictions) {
+            mPredictions = predictions;
+            if (predictions != null && predictions.size() > 0) {
+                getCurrentInputConnection().setComposingText(predictions.get(0), 1);
+            }
+            updateCandidates();
         }
-        return null;
+
+        private String[][] predict(StringBuilder query) {
+            String SERVERIP = "accentype.cloudapp.net";
+//        String SERVERIP = "10.0.3.2";
+            int SERVERPORT = 10100;
+
+            try {
+                InetAddress serverAddr = InetAddress.getByName(SERVERIP);
+                DatagramSocket socket = new DatagramSocket();
+
+                socket.setSoTimeout(500);
+
+                byte[] buf = query.toString().getBytes("US-ASCII");
+                DatagramPacket packet = new DatagramPacket(buf, buf.length, serverAddr, SERVERPORT);
+                socket.send(packet);
+
+                byte[] replyBuf = new byte[65536];
+                DatagramPacket replyPacket = new DatagramPacket(replyBuf, replyBuf.length);
+                socket.receive(replyPacket);
+
+                int index = 0;
+                byte numWords = replyBuf[index++];
+
+                String[][] wordChoices = new String[numWords][];
+                for (int i = 0; i < numWords; i++) {
+                    byte numChoices = replyBuf[index++];
+                    wordChoices[i] = new String[numChoices];
+                    for (int j = 0; j < numChoices; j++) {
+                        byte choiceByteLength = replyBuf[index++];
+                        wordChoices[i][j] = new String(replyBuf, index, choiceByteLength, "UTF-8");
+                        index += choiceByteLength;
+                    }
+                }
+                socket.close();
+
+                return wordChoices;
+            }
+            catch (Exception e) {
+                // TODO: Handle exception
+            }
+            return null;
+        }
     }
 }
