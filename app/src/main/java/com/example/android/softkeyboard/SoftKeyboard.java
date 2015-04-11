@@ -130,6 +130,7 @@ public class SoftKeyboard extends InputMethodService
 
     private void setLatinKeyboard(LatinKeyboard nextKeyboard) {
         nextKeyboard.setLanguageSwitchKeyVisibility(false);
+        nextKeyboard.setCancelKeyVisibility(false);
         mInputView.setKeyboard(nextKeyboard);
     }
 

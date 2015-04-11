@@ -28,7 +28,16 @@ public class LatinKeyboard extends Keyboard {
 
     private Key mEnterKey;
     private Key mSpaceKey;
-
+    /**
+     * Stores the current state of the mode change key. Its width will be dynamically updated to
+     * match the region of {@link #mModeChangeKey} when {@link #mModeChangeKey} becomes invisible.
+     */
+    private Key mModeChangeKey;
+    /**
+     * Stores the current state of the cancel key.
+     * When this key becomes invisible, its width will be shrunk to zero.
+     */
+    private Key mCancelKey;
     /**
      * Stores the current state of the language switch key (a.k.a. globe key). This should be
      * visible while {@link InputMethodManager#shouldOfferSwitchingToNextInputMethod(IBinder)}
@@ -36,18 +45,31 @@ public class LatinKeyboard extends Keyboard {
      */
     private Key mLanguageSwitchKey;
     /**
+     * Stores the size and other information of {@link #mModeChangeKey} when
+     * {@link #mCancelKey} is visible. This should be immutable and will be used only as a
+     * reference size when the visibility of {@link #mCancelKey} is changed.
+     */
+    private Key mSavedModeChangeKey;
+    /**
      * Stores the size and other information of {@link #mSpaceKey} when
      * {@link #mLanguageSwitchKey} is visible. This should be immutable and will be used only as a
      * reference size when the visibility of {@link #mLanguageSwitchKey} is changed.
      */
     private Key mSavedSpaceKey;
     /**
+     * Stores the size and other information of {@link #mCancelKey} when it is visible.
+     * This should be immutable and will be used only as a reference size when the visibility of
+     * {@link #mCancelKey} is changed.
+     */
+    private Key mSavedLanguageSwitchKey;
+
+    /**
      * Stores the size and other information of {@link #mLanguageSwitchKey} when it is visible.
      * This should be immutable and will be used only as a reference size when the visibility of
      * {@link #mLanguageSwitchKey} is changed.
      */
-    private Key mSavedLanguageSwitchKey;
-    
+    private Key mSavedCancelKey;
+
     public LatinKeyboard(Context context, int xmlLayoutResId) {
         super(context, xmlLayoutResId);
     }
@@ -66,9 +88,15 @@ public class LatinKeyboard extends Keyboard {
         } else if (key.codes[0] == ' ') {
             mSpaceKey = key;
             mSavedSpaceKey = new LatinKey(res, parent, x, y, parser);
+        } else if (key.codes[0] == Keyboard.KEYCODE_MODE_CHANGE) {
+            mModeChangeKey = key;
+            mSavedModeChangeKey = new LatinKey(res, parent, x, y, parser);
         } else if (key.codes[0] == LatinKeyboardView.KEYCODE_LANGUAGE_SWITCH) {
             mLanguageSwitchKey = key;
             mSavedLanguageSwitchKey = new LatinKey(res, parent, x, y, parser);
+        } else if (key.codes[0] == Keyboard.KEYCODE_CANCEL) {
+            mCancelKey = key;
+            mSavedCancelKey = new LatinKey(res, parent, x, y, parser);
         }
         return key;
     }
@@ -78,22 +106,64 @@ public class LatinKeyboard extends Keyboard {
      * @param visible True if the language switch key should be visible.
      */
     void setLanguageSwitchKeyVisibility(boolean visible) {
-        if (visible) {
-            // The language switch key should be visible. Restore the size of the space key
-            // and language switch key using the saved layout.
-            mSpaceKey.width = mSavedSpaceKey.width;
-            mSpaceKey.x = mSavedSpaceKey.x;
-            mLanguageSwitchKey.width = mSavedLanguageSwitchKey.width;
-            mLanguageSwitchKey.icon = mSavedLanguageSwitchKey.icon;
-            mLanguageSwitchKey.iconPreview = mSavedLanguageSwitchKey.iconPreview;
+        updateKeyLayout(mCancelKey.width > 0, visible);
+    }
+
+    /**
+     * Dynamically change the visibility of the cancel key.
+     * @param visible True if the cancel key should be visible.
+     */
+    void setCancelKeyVisibility(boolean visible) {
+        updateKeyLayout(visible, mLanguageSwitchKey.width > 0);
+    }
+
+    void updateKeyLayout(boolean isCancelKeyVisible, boolean isLanguageSwitchKeyVisible)
+    {
+        if (isCancelKeyVisible) {
+            // The cancel key should be visible. Restore the size of the space key
+            // and language switch key and mode change key using the saved layout.
+            mModeChangeKey.x = mSavedModeChangeKey.x;
+            if (!isLanguageSwitchKeyVisible) {
+                mLanguageSwitchKey.width = 0;
+                mLanguageSwitchKey.icon = null;
+                mLanguageSwitchKey.iconPreview = null;
+                mSpaceKey.width = mSavedSpaceKey.width + mSavedLanguageSwitchKey.width;
+                mSpaceKey.x = mSavedSpaceKey.x - mSavedLanguageSwitchKey.width;
+            }
+            else {
+                mLanguageSwitchKey.x = mSavedLanguageSwitchKey.x;
+                mLanguageSwitchKey.width = mSavedLanguageSwitchKey.width;
+                mLanguageSwitchKey.icon = mSavedLanguageSwitchKey.icon;
+                mLanguageSwitchKey.iconPreview = mSavedLanguageSwitchKey.iconPreview;
+                mSpaceKey.width = mSavedSpaceKey.width;
+                mSpaceKey.x = mSavedSpaceKey.x;
+            }
+            mCancelKey.width = mSavedCancelKey.width;
+            mCancelKey.x = mSavedCancelKey.x;
+            mCancelKey.icon = mSavedCancelKey.icon;
+            mCancelKey.iconPreview = mSavedCancelKey.iconPreview;
         } else {
-            // The language switch key should be hidden. Change the width of the space key
-            // to fill the space of the language key so that the user will not see any strange gap.
-            mSpaceKey.width = mSavedSpaceKey.width + mSavedLanguageSwitchKey.width;
-            mSpaceKey.x = mSavedSpaceKey.x - mSavedLanguageSwitchKey.width;
-            mLanguageSwitchKey.width = 0;
-            mLanguageSwitchKey.icon = null;
-            mLanguageSwitchKey.iconPreview = null;
+            // The cancel key should be hidden. Change the width of the space key
+            // to fill the space of the cancel key so that the user will not see any strange gap.
+            mModeChangeKey.x = mSavedModeChangeKey.x - mSavedCancelKey.width;
+            if (!isLanguageSwitchKeyVisible) {
+                mLanguageSwitchKey.width = 0;
+                mLanguageSwitchKey.icon = null;
+                mLanguageSwitchKey.iconPreview = null;
+                mSpaceKey.width = mSavedSpaceKey.width + mSavedCancelKey.width + mSavedLanguageSwitchKey.width;
+                mSpaceKey.x = mSavedSpaceKey.x - mSavedCancelKey.width - mSavedLanguageSwitchKey.width;
+            }
+            else {
+                mLanguageSwitchKey.x = mSavedLanguageSwitchKey.x - mSavedCancelKey.width;
+                mLanguageSwitchKey.width = mSavedLanguageSwitchKey.width;
+                mLanguageSwitchKey.icon = mSavedLanguageSwitchKey.icon;
+                mLanguageSwitchKey.iconPreview = mSavedLanguageSwitchKey.iconPreview;
+                mSpaceKey.width = mSavedSpaceKey.width + mSavedCancelKey.width;
+                mSpaceKey.x = mSavedSpaceKey.x - mSavedCancelKey.width;
+            }
+            mCancelKey.width = 0;
+            mCancelKey.icon = null;
+            mCancelKey.iconPreview = null;
         }
     }
 
