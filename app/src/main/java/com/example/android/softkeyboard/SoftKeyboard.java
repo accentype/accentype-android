@@ -734,29 +734,53 @@ public class SoftKeyboard extends InputMethodService
         /** The system calls this to perform work in a worker thread and
          * delivers it the parameters given to AsyncTask.execute() */
         protected List<String> doInBackground(StringBuilder... composing) {
-            String[][] choices = predict(composing[0]);
+            StringBuilder query = composing[0];
+            String[][] choices = predict(query);
             if (choices != null) {
-
-                int[] bins = new int[choices.length + 1];
-                int totalChoices = 1;
-                for (int i = 0; i < choices.length; i++) {
-                    bins[i] = totalChoices;
-                    totalChoices *= choices[i].length;
-                    bins[i + 1] = totalChoices;
-                }
-                int maxNumPredictions = choices.length < 3 ? 5 : 3;
-                int numPredictions = Math.min(maxNumPredictions, totalChoices);
-
-                List<String> predictions = new ArrayList<>(numPredictions);
-                for (int p = 0; p < numPredictions; p++) {
-                    StringBuilder prediction = new StringBuilder();
+                List<String> predictions;
+                if (choices.length < 10)
+                {
+                    int[] bins = new int[choices.length + 1];
+                    int totalChoices = 1;
                     for (int i = 0; i < choices.length; i++) {
-                        int ind = (p % bins[i + 1]) / bins[i];
-                        prediction.append(choices[i][ind]);
-                        if (i < choices.length - 1) {
-                            prediction.append(" ");
-                        }
+                        bins[i] = totalChoices;
+                        totalChoices *= choices[i].length;
+                        bins[i + 1] = totalChoices;
                     }
+                    int maxNumPredictions = choices.length < 3 ? 5 : 3;
+                    int numPredictions = Math.min(maxNumPredictions, totalChoices);
+
+                    predictions = new ArrayList<>(numPredictions);
+                    for (int p = 0; p < numPredictions; p++) {
+                        StringBuilder prediction = new StringBuilder(query);
+                        int q = 0;
+                        for (int i = 0; i < choices.length; i++) {
+                            int ind = (p % bins[i + 1]) / bins[i];
+                            String choice = choices[i][ind];
+                            while (Character.isWhitespace(prediction.charAt(q)))
+                            {
+                                q++;
+                            }
+                            prediction.replace(q, q + choice.length(), choice);
+                            q += choice.length();
+                        }
+                        predictions.add(prediction.toString());
+                    }
+                }
+                else
+                {
+                    StringBuilder prediction = new StringBuilder(query);
+                    int q = 0;
+                    for (int i = 0; i < choices.length; i++) {
+                        String choice = choices[i][0];
+                        while (Character.isWhitespace(prediction.charAt(q)))
+                        {
+                            q++;
+                        }
+                        prediction.replace(q, q + choice.length(), choice);
+                        q += choice.length();
+                    }
+                    predictions = new ArrayList<>(1);
                     predictions.add(prediction.toString());
                 }
 
