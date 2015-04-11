@@ -83,6 +83,7 @@ public class SoftKeyboard extends InputMethodService
     private LatinKeyboard mCurKeyboard;
     
     private String mWordSeparators;
+    private String mSpecialSeparators;
 
     /**
      * Main initialization of the input method component.  Be sure to call
@@ -92,6 +93,7 @@ public class SoftKeyboard extends InputMethodService
         super.onCreate();
         mInputMethodManager = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
         mWordSeparators = getResources().getString(R.string.word_separators);
+        mSpecialSeparators = getResources().getString(R.string.special_separators);
     }
     
     /**
@@ -441,7 +443,13 @@ public class SoftKeyboard extends InputMethodService
      */
     private void commitTyped(InputConnection inputConnection) {
         if (mComposing.length() > 0) {
-            inputConnection.commitText(mComposing, mComposing.length());
+            if (mPredictions != null & mPredictions.size() > 0) {
+                String prediction = mPredictions.get(0);
+                inputConnection.commitText(prediction, prediction.length());
+            }
+            else {
+                inputConnection.commitText(mComposing, mComposing.length());
+            }
             mComposing.setLength(0);
             updatePredictions();
             updateCandidates();
@@ -506,7 +514,20 @@ public class SoftKeyboard extends InputMethodService
     // Implementation of KeyboardViewListener
 
     public void onKey(int primaryCode, int[] keyCodes) {
-        if (primaryCode == Keyboard.KEYCODE_DELETE) {
+        if (isWordSeparator(primaryCode)) {
+            if (isSpecialSeparator(primaryCode)) {
+                handleCharacter(primaryCode, keyCodes);
+            }
+            else {
+                // Handle separator
+                if (mComposing.length() > 0) {
+                    commitTyped(getCurrentInputConnection());
+                }
+                sendKey(primaryCode);
+                updateShiftKeyState(getCurrentInputEditorInfo());
+            }
+        }
+        else if (primaryCode == Keyboard.KEYCODE_DELETE) {
             handleBackspace();
         } else if (primaryCode == Keyboard.KEYCODE_SHIFT) {
             handleShift();
@@ -635,7 +656,7 @@ public class SoftKeyboard extends InputMethodService
                 primaryCode = Character.toUpperCase(primaryCode);
             }
         }
-        if ((isAlphabet(primaryCode) || isWordSeparator(primaryCode)) && mPredictionOn) {
+        if ((isAlphabet(primaryCode) || isSpecialSeparator(primaryCode)) && mPredictionOn) {
             mComposing.append((char) primaryCode);
             updatePredictions();
             getCurrentInputConnection().setComposingText(mComposing, 1);
@@ -679,13 +700,12 @@ public class SoftKeyboard extends InputMethodService
         }
     }
     
-    private String getWordSeparators() {
-        return mWordSeparators;
-    }
-    
     public boolean isWordSeparator(int code) {
-        String separators = getWordSeparators();
-        return separators.contains(String.valueOf((char)code));
+        return mWordSeparators.contains(String.valueOf((char)code));
+    }
+
+    public boolean isSpecialSeparator(int code) {
+        return mSpecialSeparators.contains(String.valueOf((char)code));
     }
 
     public void pickDefaultCandidate() {
