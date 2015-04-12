@@ -592,7 +592,7 @@ public class SoftKeyboard extends InputMethodService
 
     private void updatePredictions() {
         if (mComposing.length() > 0) {
-            new Predictor().execute(mComposing);
+            new Predictor().execute(mComposing.toString());
         }
         else {
             mPredictions = null;
@@ -750,11 +750,11 @@ public class SoftKeyboard extends InputMethodService
     public void onRelease(int primaryCode) {
     }
 
-    private class Predictor extends AsyncTask<StringBuilder, Void, List<String>> {
+    private class Predictor extends AsyncTask<String, Void, List<String>> {
         /** The system calls this to perform work in a worker thread and
          * delivers it the parameters given to AsyncTask.execute() */
-        protected List<String> doInBackground(StringBuilder... composing) {
-            StringBuilder query = composing[0];
+        protected List<String> doInBackground(String... composing) {
+            StringBuilder query = new StringBuilder(composing[0]);
             String[][] choices = predict(query);
             if (choices != null) {
                 List<String> predictions;
