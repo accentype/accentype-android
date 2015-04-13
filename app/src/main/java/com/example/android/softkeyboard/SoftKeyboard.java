@@ -69,6 +69,7 @@ public class SoftKeyboard extends InputMethodService
     
     private StringBuilder mComposing = new StringBuilder();
     private List<String> mPredictions;
+    private String[][] mWordChoices;
     private boolean mPredictionOn;
     private boolean mCompletionOn;
     private int mLastDisplayWidth;
@@ -302,7 +303,7 @@ public class SoftKeyboard extends InputMethodService
         if (mCompletionOn) {
             mCompletions = completions;
             if (completions == null) {
-                setSuggestions(null, false, false);
+                setSuggestions(null, null, false, false);
                 return;
             }
             
@@ -311,7 +312,7 @@ public class SoftKeyboard extends InputMethodService
                 CompletionInfo ci = completions[i];
                 if (ci != null) stringList.add(ci.getText().toString());
             }
-            setSuggestions(stringList, true, true);
+            setSuggestions(stringList, null, true, true);
         }
     }
     
@@ -583,9 +584,9 @@ public class SoftKeyboard extends InputMethodService
                         list.add(mPredictions.get(i));
                     }
                 }
-                setSuggestions(list, true, true);
+                setSuggestions(list, mWordChoices, true, true);
             } else {
-                setSuggestions(null, false, false);
+                setSuggestions(null, null, false, false);
             }
         }
     }
@@ -596,10 +597,11 @@ public class SoftKeyboard extends InputMethodService
         }
         else {
             mPredictions = null;
+            mWordChoices = null;
         }
     }
 
-    public void setSuggestions(List<String> suggestions, boolean completions,
+    public void setSuggestions(List<String> suggestions, String[][] wordChoices, boolean completions,
             boolean typedWordValid) {
         if (suggestions != null && suggestions.size() > 0) {
             setCandidatesViewShown(true);
@@ -607,7 +609,7 @@ public class SoftKeyboard extends InputMethodService
             setCandidatesViewShown(true);
         }
         if (mCandidateView != null) {
-            mCandidateView.setSuggestions(suggestions, completions, typedWordValid);
+            mCandidateView.setSuggestions(suggestions, wordChoices, completions, typedWordValid);
         }
     }
     
@@ -750,10 +752,10 @@ public class SoftKeyboard extends InputMethodService
     public void onRelease(int primaryCode) {
     }
 
-    private class Predictor extends AsyncTask<String, Void, List<String>> {
+    private class Predictor extends AsyncTask<String, Void, PredictionData> {
         /** The system calls this to perform work in a worker thread and
          * delivers it the parameters given to AsyncTask.execute() */
-        protected List<String> doInBackground(String... composing) {
+        protected PredictionData doInBackground(String... composing) {
             StringBuilder query = new StringBuilder(composing[0]);
             String[][] choices = predict(query);
             if (choices != null) {
@@ -804,17 +806,21 @@ public class SoftKeyboard extends InputMethodService
                     predictions.add(prediction.toString());
                 }
 
-                return predictions;
+                PredictionData data = new PredictionData();
+                data.Predictions = predictions;
+                data.WordChoices = choices;
+                return data;
             }
             return null;
         }
 
         /** The system calls this to perform work in the UI thread and delivers
          * the result from doInBackground() */
-        protected void onPostExecute(List<String> predictions) {
-            mPredictions = predictions;
-            if (predictions != null && predictions.size() > 0) {
-                getCurrentInputConnection().setComposingText(predictions.get(0), 1);
+        protected void onPostExecute(PredictionData predictionData) {
+            mPredictions = predictionData.Predictions;
+            mWordChoices = predictionData.WordChoices;
+            if (mPredictions != null && mPredictions.size() > 0) {
+                getCurrentInputConnection().setComposingText(mPredictions.get(0), 1);
             }
             updateCandidates();
         }
@@ -860,5 +866,9 @@ public class SoftKeyboard extends InputMethodService
             }
             return null;
         }
+    }
+    private class PredictionData {
+        public List<String> Predictions;
+        public String[][] WordChoices;
     }
 }

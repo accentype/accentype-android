@@ -27,6 +27,7 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class CandidateView extends View {
@@ -35,6 +36,7 @@ public class CandidateView extends View {
 
     private SoftKeyboard mService;
     private List<String> mSuggestions;
+    private String[][] mWordChoices;
     private int mSelectedIndex;
     private int mTouchX = OUT_OF_BOUNDS;
     private Drawable mSelectionHighlight;
@@ -108,6 +110,46 @@ public class CandidateView extends View {
                 invalidate();
                 return true;
             }
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
+            {
+                if (velocityY > 20 && mWordChoices != null)
+                {
+                    float wordX = e1.getX();
+                    for (int i = 0; i < mSuggestions.size(); i++) {
+                        if (wordX >= mWordX[i] && wordX <= mWordX[i] + mWordWidth[i]) {
+                            float offsetX = wordX - mWordX[i];
+                            String suggestion = mSuggestions.get(i);
+                            int iWord = -1;
+                            boolean isWordCounted = false;
+                            for (int j = 0; j < suggestion.length(); j++) {
+                                if (!Character.isWhitespace(suggestion.charAt(j))) {
+                                    if (!isWordCounted)
+                                    {
+                                        iWord++;
+                                        isWordCounted = true;
+                                    }
+                                }
+                                else {
+                                    isWordCounted = false;
+                                }
+
+                                float charWidth = mPaint.measureText(suggestion, j, j + 1);
+                                if (offsetX <= charWidth && iWord >= 0 && iWord < mWordChoices.length)
+                                {
+                                    mSuggestions = new ArrayList<>(Arrays.asList(mWordChoices[iWord]));
+                                    setSuggestions(mSuggestions, null, false, false);
+                                    return true;
+                                }
+                                offsetX -= charWidth;
+                            }
+                            break;
+                        }
+                    }
+                }
+                return false;
+            }
         });
         setHorizontalFadingEdgeEnabled(true);
         setWillNotDraw(false);
@@ -178,7 +220,7 @@ public class CandidateView extends View {
             float textWidth = paint.measureText(suggestion);
             final int wordWidth = (int) textWidth + X_GAP * 2;
 
-            mWordX[i] = x;
+            mWordX[i] = x + X_GAP;
             mWordWidth[i] = wordWidth;
             paint.setColor(mColorNormal);
             if (touchX + scrollX >= x && touchX + scrollX < x + wordWidth && !scrolled) {
@@ -231,11 +273,12 @@ public class CandidateView extends View {
         invalidate();
     }
     
-    public void setSuggestions(List<String> suggestions, boolean completions,
+    public void setSuggestions(List<String> suggestions, String[][] wordChoices, boolean completions,
             boolean typedWordValid) {
         clear();
         if (suggestions != null) {
-            mSuggestions = new ArrayList<String>(suggestions);
+            mSuggestions = new ArrayList<>(suggestions);
+            mWordChoices = wordChoices;
         }
         mTypedWordValid = typedWordValid;
         scrollTo(0, 0);
@@ -253,6 +296,7 @@ public class CandidateView extends View {
 
     public void clear() {
         mSuggestions = EMPTY_LIST;
+        mWordChoices = null;
         mTouchX = OUT_OF_BOUNDS;
         mSelectedIndex = -1;
         invalidate();
