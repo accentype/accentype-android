@@ -100,14 +100,9 @@ public class CandidateView extends View {
             public boolean onScroll(MotionEvent e1, MotionEvent e2,
                     float distanceX, float distanceY) {
                 mScrolled = true;
-                int sx = getScrollX();
-                sx += distanceX;
-                if (sx < 0) {
-                    sx = 0;
-                }
-                if (sx + getWidth() > mTotalWidth) {                    
-                    sx -= distanceX;
-                }
+
+                int sx = (int)Math.max(0, Math.min((float)mTotalWidth - getWidth(), getScrollX() + distanceX));
+
                 mTargetScrollX = sx;
                 scrollTo(sx, getScrollY());
                 invalidate();
