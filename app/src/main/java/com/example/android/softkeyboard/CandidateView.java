@@ -142,7 +142,7 @@ public class CandidateView extends View {
                     }
                     String[] additionalChoices = null;
                     if (mDictionary != null && mComposing != null) {
-                        String[] rawWords = mComposing.split("\\s+");
+                        String[] rawWords = mComposing.trim().split("\\s+");
                         if (iWord < rawWords.length) {
                             String rawWord = rawWords[iWord];
                             String rawWordLower = rawWord.toLowerCase();
