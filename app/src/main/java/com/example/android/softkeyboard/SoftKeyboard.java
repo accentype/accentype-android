@@ -609,7 +609,7 @@ public class SoftKeyboard extends InputMethodService
             setCandidatesViewShown(true);
         }
         if (mCandidateView != null) {
-            mCandidateView.setSuggestions(suggestions, wordChoices, completions, typedWordValid);
+            mCandidateView.setSuggestions(suggestions, wordChoices, mComposing.toString(), completions, typedWordValid);
         }
     }
     
@@ -867,6 +867,7 @@ public class SoftKeyboard extends InputMethodService
             return null;
         }
     }
+
     private class PredictionData {
         public List<String> Predictions;
         public String[][] WordChoices;

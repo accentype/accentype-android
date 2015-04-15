@@ -22,12 +22,19 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class CandidateView extends View {
@@ -35,8 +42,13 @@ public class CandidateView extends View {
     private static final int OUT_OF_BOUNDS = -1;
 
     private SoftKeyboard mService;
+    private String mComposing;
     private List<String> mSuggestions;
+    private List<String> mSecondarySuggestions;
+    private int mFlingSuggestionIndex = -1;
+    private int mFlingWordIndex = -1;
     private String[][] mWordChoices;
+    private HashMap<String, String[]> mDictionary;
     private int mSelectedIndex;
     private int mTouchX = OUT_OF_BOUNDS;
     private Drawable mSelectionHighlight;
@@ -96,7 +108,9 @@ public class CandidateView extends View {
         mPaint.setAntiAlias(true);
         mPaint.setTextSize(r.getDimensionPixelSize(R.dimen.candidate_font_height));
         mPaint.setStrokeWidth(0);
-        
+
+        new DictionaryLoader().execute();
+
         mGestureDetector = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2,
@@ -114,39 +128,64 @@ public class CandidateView extends View {
             @Override
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
             {
+                // Already displaying secondary suggestions so flinging should do nothing
+                if (mSecondarySuggestions != null) {
+                    return false;
+                }
                 if (velocityY > 20 && mWordChoices != null)
                 {
-                    float wordX = e1.getX();
-                    for (int i = 0; i < mSuggestions.size(); i++) {
-                        if (wordX >= mWordX[i] && wordX <= mWordX[i] + mWordWidth[i]) {
-                            float offsetX = wordX - mWordX[i];
-                            String suggestion = mSuggestions.get(i);
-                            int iWord = -1;
-                            boolean isWordCounted = false;
-                            for (int j = 0; j < suggestion.length(); j++) {
-                                if (!Character.isWhitespace(suggestion.charAt(j))) {
-                                    if (!isWordCounted)
-                                    {
-                                        iWord++;
-                                        isWordCounted = true;
+                    TouchLocation touchLocation = getWordIndexBasedOnTouchPosition(e1.getX());
+
+                    int iWord = touchLocation.WordIndex;
+                    if (iWord < 0) {
+                        return false;
+                    }
+                    String[] additionalChoices = null;
+                    if (mDictionary != null && mComposing != null) {
+                        String[] rawWords = mComposing.split("\\s+");
+                        if (iWord < rawWords.length) {
+                            String rawWord = rawWords[iWord];
+                            String rawWordLower = rawWord.toLowerCase();
+                            if (mDictionary.containsKey(rawWordLower)) {
+                                List<Integer> upperCaseLocations = new ArrayList<>();
+                                for (int i = 0; i < rawWord.length(); i++) {
+                                    if (Character.isUpperCase(rawWord.charAt(i))) {
+                                        upperCaseLocations.add(i);
                                     }
                                 }
-                                else {
-                                    isWordCounted = false;
+                                // Normalize case w.r.t raw word
+                                additionalChoices = mDictionary.get(rawWordLower);
+                                for (int i = 0; i < additionalChoices.length; i++) {
+                                    char[] choiceChars = additionalChoices[i].toCharArray();
+                                    for (int j = 0; j < upperCaseLocations.size(); j++) {
+                                        choiceChars[j] = Character.toUpperCase(choiceChars[j]);
+                                    }
+                                    additionalChoices[i] = new String(choiceChars);
                                 }
-
-                                float charWidth = mPaint.measureText(suggestion, j, j + 1);
-                                if (offsetX <= charWidth && iWord >= 0 && iWord < mWordChoices.length)
-                                {
-                                    mSuggestions = new ArrayList<>(Arrays.asList(mWordChoices[iWord]));
-                                    setSuggestions(mSuggestions, null, false, false);
-                                    return true;
-                                }
-                                offsetX -= charWidth;
                             }
-                            break;
                         }
                     }
+                    mSecondarySuggestions = new ArrayList<>(Arrays.asList(mWordChoices[iWord]));
+                    if (additionalChoices != null) {
+                        for (int k = 0; k < additionalChoices.length; k++) {
+                            if (!mSecondarySuggestions.contains(additionalChoices[k]))
+                            {
+                                mSecondarySuggestions.add(additionalChoices[k]);
+                            }
+                        }
+                    }
+
+                    mFlingSuggestionIndex = touchLocation.SuggestionIndex;
+                    mFlingWordIndex = iWord;
+
+                    scrollTo(0, 0);
+                    mTargetScrollX = 0;
+                    // Compute the total width
+                    onDraw(null);
+                    invalidate();
+                    requestLayout();
+
+                    return true;
                 }
                 return false;
             }
@@ -196,7 +235,7 @@ public class CandidateView extends View {
             super.onDraw(canvas);
         }
         mTotalWidth = 0;
-        if (mSuggestions == null) return;
+        if (mSuggestions == null && mSecondarySuggestions == null) return;
         
         if (mBgPadding == null) {
             mBgPadding = new Rect(0, 0, 0, 0);
@@ -205,7 +244,8 @@ public class CandidateView extends View {
             }
         }
         int x = 0;
-        final int count = mSuggestions.size(); 
+        List<String> suggestions = mSecondarySuggestions != null ? mSecondarySuggestions : mSuggestions;
+        final int count = suggestions.size();
         final int height = getHeight();
         final Rect bgPadding = mBgPadding;
         final Paint paint = mPaint;
@@ -216,7 +256,7 @@ public class CandidateView extends View {
         final int y = (int) (((height - mPaint.getTextSize()) / 2) - mPaint.ascent());
 
         for (int i = 0; i < count; i++) {
-            String suggestion = mSuggestions.get(i);
+            String suggestion = suggestions.get(i);
             float textWidth = paint.measureText(suggestion);
             final int wordWidth = (int) textWidth + X_GAP * 2;
 
@@ -273,12 +313,13 @@ public class CandidateView extends View {
         invalidate();
     }
     
-    public void setSuggestions(List<String> suggestions, String[][] wordChoices, boolean completions,
+    public void setSuggestions(List<String> suggestions, String[][] wordChoices, String composing, boolean completions,
             boolean typedWordValid) {
         clear();
         if (suggestions != null) {
             mSuggestions = new ArrayList<>(suggestions);
             mWordChoices = wordChoices;
+            mComposing = composing;
         }
         mTypedWordValid = typedWordValid;
         scrollTo(0, 0);
@@ -296,9 +337,13 @@ public class CandidateView extends View {
 
     public void clear() {
         mSuggestions = EMPTY_LIST;
+        mSecondarySuggestions = null;
         mWordChoices = null;
+        mComposing = null;
         mTouchX = OUT_OF_BOUNDS;
         mSelectedIndex = -1;
+        mFlingSuggestionIndex = -1;
+        mFlingWordIndex = -1;
         invalidate();
     }
     
@@ -323,7 +368,12 @@ public class CandidateView extends View {
             if (y <= 0) {
                 // Fling up!?
                 if (mSelectedIndex >= 0) {
-                    mService.pickSuggestionManually(mSelectedIndex);
+                    if (mSecondarySuggestions != null) {
+                        pickSecondarySuggestionsManually(mSelectedIndex);
+                    }
+                    else {
+                        mService.pickSuggestionManually(mSelectedIndex);
+                    }
                     mSelectedIndex = -1;
                 }
             }
@@ -332,7 +382,12 @@ public class CandidateView extends View {
         case MotionEvent.ACTION_UP:
             if (!mScrolled) {
                 if (mSelectedIndex >= 0) {
-                    mService.pickSuggestionManually(mSelectedIndex);
+                    if (mSecondarySuggestions != null) {
+                        pickSecondarySuggestionsManually(mSelectedIndex);
+                    }
+                    else {
+                        mService.pickSuggestionManually(mSelectedIndex);
+                    }
                 }
             }
             mSelectedIndex = -1;
@@ -358,8 +413,112 @@ public class CandidateView extends View {
         invalidate();
     }
 
+    private void pickSecondarySuggestionsManually(int index) {
+        String chosenWord = mSecondarySuggestions.get(index);
+
+        StringBuilder suggestion = new StringBuilder(mSuggestions.get(mFlingSuggestionIndex));
+
+        boolean isWordCounted = false;
+        int iWord = -1;
+        for (int j = 0; j < suggestion.length(); j++) {
+            if (!Character.isWhitespace(suggestion.charAt(j))) {
+                if (!isWordCounted) {
+                    iWord++;
+                    isWordCounted = true;
+
+                    if (iWord == mFlingWordIndex) {
+                        suggestion.replace(j, j + chosenWord.length(), chosenWord);
+                        mSuggestions.set(mFlingSuggestionIndex, suggestion.toString());
+                        break;
+                    }
+                }
+            } else {
+                isWordCounted = false;
+            }
+        }
+
+        mSecondarySuggestions = null;
+
+        scrollTo(0, 0);
+        mTargetScrollX = 0;
+        // Compute the total width
+        onDraw(null);
+        invalidate();
+        requestLayout();
+    }
+
     private void removeHighlight() {
         mTouchX = OUT_OF_BOUNDS;
         invalidate();
+    }
+
+    private TouchLocation getWordIndexBasedOnTouchPosition(float touchX) {
+        TouchLocation touchLocation = new TouchLocation();
+        touchLocation.WordIndex = -1;
+        touchLocation.SuggestionIndex = -1;
+
+        for (int i = 0; i < mSuggestions.size(); i++) {
+            if (touchX >= mWordX[i] && touchX <= mWordX[i] + mWordWidth[i]) {
+                float offsetX = touchX - mWordX[i];
+                String suggestion = mSuggestions.get(i);
+                boolean isWordCounted = false;
+                for (int j = 0; j < suggestion.length(); j++) {
+                    if (!Character.isWhitespace(suggestion.charAt(j))) {
+                        if (!isWordCounted)
+                        {
+                            touchLocation.WordIndex++;
+                            isWordCounted = true;
+                        }
+                    }
+                    else {
+                        isWordCounted = false;
+                    }
+
+                    float charWidth = mPaint.measureText(suggestion, j, j + 1);
+                    if (offsetX <= charWidth)
+                    {
+                        touchLocation.SuggestionIndex = i;
+                        return touchLocation;
+                    }
+                    offsetX -= charWidth;
+                }
+                break;
+            }
+        }
+        return touchLocation;
+    }
+
+    private class TouchLocation {
+        public int WordIndex;
+        public int SuggestionIndex;
+    }
+
+    private class DictionaryLoader extends AsyncTask<Void, Void, HashMap<String, String[]>> {
+        /** The system calls this to perform work in a worker thread and
+         * delivers it the parameters given to AsyncTask.execute() */
+        protected HashMap<String, String[]> doInBackground(Void... params) {
+            try
+            {
+                InputStream accStream = getResources().openRawResource(R.raw.dictionary);
+                BufferedReader accReader = new BufferedReader(new InputStreamReader(accStream, "UTF-8"));
+                HashMap<String, String[]> dictionary = new HashMap<>();
+                String line;
+                while ((line = accReader.readLine()) != null) {
+                    String[] words = line.split("\\s+");
+                    dictionary.put(words[0], words);
+                }
+                return dictionary;
+            }
+            catch (UnsupportedEncodingException ex) { }
+            catch (IOException ex) { }
+
+            return null;
+        }
+
+        /** The system calls this to perform work in the UI thread and delivers
+         * the result from doInBackground() */
+        protected void onPostExecute(HashMap<String, String[]> dictionary) {
+            mDictionary = dictionary;
+        }
     }
 }
