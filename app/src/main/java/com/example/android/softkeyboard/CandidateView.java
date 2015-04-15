@@ -132,9 +132,9 @@ public class CandidateView extends View {
                 if (mSecondarySuggestions != null) {
                     return false;
                 }
-                if (velocityY > 20 && mWordChoices != null)
+                if (velocityY > 100 && mWordChoices != null)
                 {
-                    TouchLocation touchLocation = getWordIndexBasedOnTouchPosition(e1.getX());
+                    TouchLocation touchLocation = getWordIndexBasedOnTouchPosition(e1.getX() + getScrollX());
 
                     int iWord = touchLocation.WordIndex;
                     if (iWord < 0) {
