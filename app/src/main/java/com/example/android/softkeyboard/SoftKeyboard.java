@@ -86,6 +86,7 @@ public class SoftKeyboard extends InputMethodService
     private String mWordSeparators;
     private String mSpecialSeparators;
 
+    private static final List<String> EMPTY_LIST = new ArrayList<String>();
     /**
      * Main initialization of the input method component.  Be sure to call
      * to super class.
@@ -575,7 +576,7 @@ public class SoftKeyboard extends InputMethodService
         if (!mCompletionOn) {
             if (mComposing.length() > 0) {
                 ArrayList<String> list = new ArrayList<>();
-                if (mPredictions == null) {
+                if (mPredictions == null || mPredictions.size() <= 0) {
                     list.add(mComposing.toString());
                 }
                 else
@@ -596,7 +597,7 @@ public class SoftKeyboard extends InputMethodService
             new Predictor().execute(mComposing.toString());
         }
         else {
-            mPredictions = null;
+            mPredictions = EMPTY_LIST;
             mWordChoices = null;
         }
     }
@@ -779,6 +780,9 @@ public class SoftKeyboard extends InputMethodService
                         for (int i = 0; i < choices.length; i++) {
                             int ind = (p % bins[i + 1]) / bins[i];
                             String choice = choices[i][ind];
+                            if (q >= prediction.length()) {
+                                break;
+                            }
                             while (Character.isWhitespace(prediction.charAt(q)))
                             {
                                 q++;
