@@ -56,7 +56,7 @@ public class CandidateView extends View {
     
     private Rect mBgPadding;
 
-    private static final int MAX_SUGGESTIONS = 32;
+    private static final int MAX_SUGGESTIONS = 40;
     private static final int SCROLL_PIXELS = 20;
     
     private int[] mWordWidth = new int[MAX_SUGGESTIONS];
@@ -245,7 +245,7 @@ public class CandidateView extends View {
         }
         int x = 0;
         List<String> suggestions = mSecondarySuggestions != null ? mSecondarySuggestions : mSuggestions;
-        final int count = suggestions.size();
+        final int count = Math.min(MAX_SUGGESTIONS, suggestions.size());
         final int height = getHeight();
         final Rect bgPadding = mBgPadding;
         final Paint paint = mPaint;
