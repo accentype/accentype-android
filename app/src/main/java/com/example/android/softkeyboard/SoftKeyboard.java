@@ -22,6 +22,7 @@ import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
 import android.os.AsyncTask;
 import android.os.IBinder;
+import android.os.Vibrator;
 import android.text.InputType;
 import android.text.method.MetaKeyKeyListener;
 import android.view.KeyCharacterMap;
@@ -82,7 +83,9 @@ public class SoftKeyboard extends InputMethodService
     private LatinKeyboard mQwertyKeyboard;
     
     private LatinKeyboard mCurKeyboard;
-    
+
+    private Vibrator mVibrator;
+
     private String mWordSeparators;
     private String mSpecialSeparators;
 
@@ -94,6 +97,7 @@ public class SoftKeyboard extends InputMethodService
     @Override public void onCreate() {
         super.onCreate();
         mInputMethodManager = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+        mVibrator = (Vibrator)getSystemService(VIBRATOR_SERVICE);
         mWordSeparators = getResources().getString(R.string.word_separators);
         mSpecialSeparators = getResources().getString(R.string.special_separators);
     }
@@ -748,6 +752,7 @@ public class SoftKeyboard extends InputMethodService
     }
     
     public void onPress(int primaryCode) {
+        mVibrator.vibrate(20);
     }
     
     public void onRelease(int primaryCode) {
