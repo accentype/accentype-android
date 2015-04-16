@@ -482,7 +482,7 @@ public class SoftKeyboard extends InputMethodService
      * Helper to determine if a given character code is alphabetic.
      */
     private boolean isAlphabet(int code) {
-        if (Character.isLetter(code)) {
+        if (Character.isLetter(code) || Character.isDigit(code)) {
             return true;
         } else {
             return false;
@@ -663,12 +663,19 @@ public class SoftKeyboard extends InputMethodService
                 primaryCode = Character.toUpperCase(primaryCode);
             }
         }
-        if ((isAlphabet(primaryCode) || isSpecialSeparator(primaryCode)) && mPredictionOn) {
-            mComposing.append((char) primaryCode);
-            updatePredictions();
-            getCurrentInputConnection().setComposingText(mComposing, 1);
-            updateShiftKeyState(getCurrentInputEditorInfo());
-            updateCandidates();
+        if (mPredictionOn) {
+            if (isAlphabet(primaryCode) || isSpecialSeparator(primaryCode)) {
+                mComposing.append((char) primaryCode);
+                updatePredictions();
+                getCurrentInputConnection().setComposingText(mComposing, 1);
+                updateShiftKeyState(getCurrentInputEditorInfo());
+                updateCandidates();
+            }
+            else {
+                commitTyped(getCurrentInputConnection());
+                getCurrentInputConnection().commitText(
+                        String.valueOf((char) primaryCode), 1);
+            }
         } else {
             getCurrentInputConnection().commitText(
                     String.valueOf((char) primaryCode), 1);
