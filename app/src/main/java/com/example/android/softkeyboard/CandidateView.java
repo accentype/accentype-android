@@ -154,9 +154,10 @@ public class CandidateView extends View {
                                     }
                                 }
                                 // Normalize case w.r.t raw word
-                                additionalChoices = mDictionary.get(rawWordLower);
-                                for (int i = 0; i < additionalChoices.length; i++) {
-                                    char[] choiceChars = additionalChoices[i].toCharArray();
+                                String[] dictionaryChoices = mDictionary.get(rawWordLower);
+                                additionalChoices = new String[dictionaryChoices.length];
+                                for (int i = 0; i < dictionaryChoices.length; i++) {
+                                    char[] choiceChars = dictionaryChoices[i].toCharArray();
                                     for (int j = 0; j < upperCaseLocations.size(); j++) {
                                         choiceChars[j] = Character.toUpperCase(choiceChars[j]);
                                     }
