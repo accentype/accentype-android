@@ -261,7 +261,7 @@ public class CandidateView extends View {
             float textWidth = paint.measureText(suggestion);
             final int wordWidth = (int) textWidth + X_GAP * 2;
 
-            mWordX[i] = x + X_GAP;
+            mWordX[i] = x;
             mWordWidth[i] = wordWidth;
             paint.setColor(mColorNormal);
             if (touchX + scrollX >= x && touchX + scrollX < x + wordWidth && !scrolled) {
@@ -460,7 +460,9 @@ public class CandidateView extends View {
 
         for (int i = 0; i < mSuggestions.size(); i++) {
             if (touchX >= mWordX[i] && touchX <= mWordX[i] + mWordWidth[i]) {
-                float offsetX = touchX - mWordX[i];
+                touchLocation.SuggestionIndex = i;
+
+                float offsetX = touchX - mWordX[i] - X_GAP;
                 String suggestion = mSuggestions.get(i);
                 boolean isWordCounted = false;
                 for (int j = 0; j < suggestion.length(); j++) {
@@ -478,7 +480,6 @@ public class CandidateView extends View {
                     float charWidth = mPaint.measureText(suggestion, j, j + 1);
                     if (offsetX <= charWidth)
                     {
-                        touchLocation.SuggestionIndex = i;
                         return touchLocation;
                     }
                     offsetX -= charWidth;
