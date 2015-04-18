@@ -24,6 +24,8 @@ import android.inputmethodservice.Keyboard;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 
+import java.util.List;
+
 public class LatinKeyboard extends Keyboard {
 
     private Key mEnterKey;
@@ -99,6 +101,19 @@ public class LatinKeyboard extends Keyboard {
             mSavedCancelKey = new LatinKey(res, parent, x, y, parser);
         }
         return key;
+    }
+
+    @Override
+    public int[] getNearestKeys(int x, int y) {
+        List<Key> keys = getKeys();
+        Key[] mKeys = keys.toArray(new Key[keys.size()]);
+        int i = 0;
+        for (Key key : mKeys) {
+            if(key.isInside(x, y))
+                return new int[]{i};
+            i++;
+        }
+        return new int[0];
     }
 
     /**
