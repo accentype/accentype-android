@@ -1,8 +1,14 @@
 PENDING:
-Hide key preview for space & delete buttons
-Disable prediction for whitespace inputs when possible
+Add button to toggle prediction on & off
+Fix issue with keyboard eating up space of application
 
 FIXED:
+
+Disable prediction for whitespace inputs when possible
+- On second thought, this is not necessary
+
+Hide key preview for space & delete buttons
+- 7e7c79ca194d07ff3fe041796a148292be8e76c6
 
 Hide button 
  - c3e09c3c631dea3847dad30c9bd16852fb2dea8a & 96a16c86385d32910bddaf7e2c82d0077f165c23 & c3e09c3c631dea3847dad30c9bd16852fb2dea8a & 4b92a24f5b9aa2608704f8fd09a6f6934a717b41
