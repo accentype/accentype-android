@@ -62,7 +62,7 @@ public class CandidateView extends View {
     private int[] mWordWidth = new int[MAX_SUGGESTIONS];
     private int[] mWordX = new int[MAX_SUGGESTIONS];
 
-    private static final int X_GAP = 10;
+    private static final int X_GAP = 20;
     
     private static final List<String> EMPTY_LIST = new ArrayList<String>();
 
