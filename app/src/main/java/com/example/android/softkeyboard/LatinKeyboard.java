@@ -203,7 +203,7 @@ public class LatinKeyboard extends Keyboard {
                 mEnterKey.label = res.getText(R.string.label_next_key);
                 break;
             case EditorInfo.IME_ACTION_SEARCH:
-                mEnterKey.icon = res.getDrawable(R.drawable.sym_keyboard_search);
+                mEnterKey.icon = res.getDrawable(R.drawable.sym_keyboard_search_holo_dark);
                 mEnterKey.label = null;
                 break;
             case EditorInfo.IME_ACTION_SEND:
