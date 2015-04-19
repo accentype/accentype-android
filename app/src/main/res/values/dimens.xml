@@ -20,7 +20,8 @@
 
 <resources>
     <dimen name="vertical_correction">0dp</dimen>
-    <dimen name="key_height">50dip</dimen>
+    <dimen name="key_height">46dip</dimen>
+    <dimen name="key_font_size">24sp</dimen>
     <dimen name="candidate_font_height">16sp</dimen>
     <dimen name="candidate_vertical_padding">12sp</dimen>
 </resources>
