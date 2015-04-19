@@ -760,9 +760,13 @@ public class SoftKeyboard extends InputMethodService
     
     public void onPress(int primaryCode) {
         mVibrator.vibrate(20);
+        if (primaryCode != 32 && primaryCode != -5) {
+            mInputView.setPreviewEnabled(true);
+        }
     }
     
     public void onRelease(int primaryCode) {
+        mInputView.setPreviewEnabled(false);
     }
 
     private class Predictor extends AsyncTask<String, Void, PredictionData> {
