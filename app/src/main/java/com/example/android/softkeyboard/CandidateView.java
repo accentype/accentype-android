@@ -438,6 +438,8 @@ public class CandidateView extends View {
             }
         }
 
+        mService.updateComposingText(suggestion.toString());
+
         mSecondarySuggestions = null;
 
         scrollTo(0, 0);

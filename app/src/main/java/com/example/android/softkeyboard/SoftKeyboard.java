@@ -740,6 +740,12 @@ public class SoftKeyboard extends InputMethodService
             getCurrentInputConnection().commitText(prediction, prediction.length());
         }
     }
+
+    public void updateComposingText(String text) {
+        if (text != null) {
+            getCurrentInputConnection().setComposingText(text, 1);
+        }
+    }
     
     public void swipeRight() {
         if (mCompletionOn) {
