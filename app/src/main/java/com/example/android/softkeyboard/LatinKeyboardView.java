@@ -27,6 +27,7 @@ public class LatinKeyboardView extends KeyboardView {
     static final int KEYCODE_OPTIONS = -100;
     // TODO: Move this into android.inputmethodservice.Keyboard
     static final int KEYCODE_LANGUAGE_SWITCH = -101;
+    static final int KEYCODE_INPUT_METHOD_SWITCH = -102;
 
     public LatinKeyboardView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -40,6 +41,9 @@ public class LatinKeyboardView extends KeyboardView {
     protected boolean onLongPress(Key key) {
         if (key.codes[0] == Keyboard.KEYCODE_CANCEL) {
             getOnKeyboardActionListener().onKey(KEYCODE_OPTIONS, null);
+            return true;
+        } else if (key.codes[0] == KEYCODE_LANGUAGE_SWITCH) {
+            getOnKeyboardActionListener().onKey(KEYCODE_INPUT_METHOD_SWITCH, null);
             return true;
         } else {
             return super.onLongPress(key);

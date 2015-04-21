@@ -135,7 +135,6 @@ public class SoftKeyboard extends InputMethodService
     }
 
     private void setLatinKeyboard(LatinKeyboard nextKeyboard) {
-        nextKeyboard.setLanguageSwitchKeyVisibility(false);
         nextKeyboard.setCancelKeyVisibility(false);
         mInputView.setKeyboard(nextKeyboard);
     }
@@ -543,6 +542,9 @@ public class SoftKeyboard extends InputMethodService
         } else if (primaryCode == LatinKeyboardView.KEYCODE_LANGUAGE_SWITCH) {
             handleLanguageSwitch();
             return;
+        } else if (primaryCode == LatinKeyboardView.KEYCODE_INPUT_METHOD_SWITCH) {
+            handleInputMethodSwitch();
+            return;
         } else if (primaryCode == LatinKeyboardView.KEYCODE_OPTIONS) {
             // Show a menu or somethin'
         } else if (primaryCode == Keyboard.KEYCODE_MODE_CHANGE
@@ -597,7 +599,7 @@ public class SoftKeyboard extends InputMethodService
     }
 
     private void updatePredictions() {
-        if (mComposing.length() > 0) {
+        if (mPredictionOn && mComposing.length() > 0) {
             new Predictor().execute(mComposing.toString());
         }
         else {
@@ -701,7 +703,18 @@ public class SoftKeyboard extends InputMethodService
     }
 
     private void handleLanguageSwitch() {
-        mInputMethodManager.switchToNextInputMethod(getToken(), false /* onlyCurrentIme */);
+        mPredictionOn = !mPredictionOn;
+
+        if (mPredictionOn) {
+            updatePredictions();
+        } else {
+            commitTyped(getCurrentInputConnection());
+        }
+        setCandidatesViewShown(mPredictionOn);
+    }
+
+    private void handleInputMethodSwitch() {
+        mInputMethodManager.showInputMethodPicker();
     }
 
     private void checkToggleCapsLock() {
