@@ -1,8 +1,12 @@
 PENDING:
-Add button to toggle prediction on & off
+Fix issue with shift key state not updating properly after different actions.
+Add client-side learning capability.
 Fix issue with keyboard eating up space of application
 
 FIXED:
+
+Add button to toggle prediction on & off
+- Use the language switch key, pressing toggles prediction and long-pressing opens input method picker cddc6b9178a823625c673722cb2e24c3b6d67b85
 
 Disable prediction for whitespace inputs when possible
 - On second thought, this is not necessary
