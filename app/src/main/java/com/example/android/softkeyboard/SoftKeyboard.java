@@ -856,14 +856,14 @@ public class SoftKeyboard extends InputMethodService
         /** The system calls this to perform work in the UI thread and delivers
          * the result from doInBackground() */
         protected void onPostExecute(PredictionData predictionData) {
-            if (predictionData != null) {
+            if (mPredictionOn && predictionData != null) {
                 mPredictions = predictionData.Predictions;
                 mWordChoices = predictionData.WordChoices;
                 if (mPredictions != null && mPredictions.size() > 0) {
                     getCurrentInputConnection().setComposingText(mPredictions.get(0), 1);
+                    updateCandidates();
                 }
             }
-            updateCandidates();
         }
 
         private String[][] predict(StringBuilder query) {
