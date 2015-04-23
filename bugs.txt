@@ -1,9 +1,14 @@
 PENDING:
-Fix issue with shift key state not updating properly after different actions.
 Add client-side learning capability.
 Fix issue with keyboard eating up space of application
+Add prediction for English
+Add emoticon
+Update icon for language switch
 
 FIXED:
+
+Fix issue with shift key state not updating properly after different actions.
+- d0ae3479dd7f476429c37dbfb35e2824048acfa6
 
 Add button to toggle prediction on & off
 - Use the language switch key, pressing toggles prediction and long-pressing opens input method picker cddc6b9178a823625c673722cb2e24c3b6d67b85
