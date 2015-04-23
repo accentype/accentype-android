@@ -448,8 +448,9 @@ public class SoftKeyboard extends InputMethodService
      */
     private void commitTyped(InputConnection inputConnection) {
         if (mComposing.length() > 0) {
-            if (mPredictions != null & mPredictions.size() > 0) {
-                String prediction = mPredictions.get(0);
+            List<String> suggestions = mCandidateView != null ? mCandidateView.getSuggestions() : mPredictions;
+            if (suggestions != null && suggestions.size() > 0) {
+                String prediction = suggestions.get(0);
                 inputConnection.commitText(prediction, prediction.length());
             }
             else {
@@ -522,6 +523,9 @@ public class SoftKeyboard extends InputMethodService
         if (isWordSeparator(primaryCode)) {
             if (isSpecialSeparator(primaryCode)) {
                 handleCharacter(primaryCode, keyCodes);
+                if (mInputView.getKeyboard() != mQwertyKeyboard) {
+                    setLatinKeyboard(mQwertyKeyboard);
+                }
             }
             else {
                 // Handle separator
