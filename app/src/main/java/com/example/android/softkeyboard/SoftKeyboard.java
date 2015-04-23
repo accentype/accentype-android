@@ -670,7 +670,6 @@ public class SoftKeyboard extends InputMethodService
                 mComposing.append((char) primaryCode);
                 updatePredictions();
                 getCurrentInputConnection().setComposingText(mComposing, 1);
-                updateShiftKeyState(getCurrentInputEditorInfo());
                 updateCandidates();
             }
             else {
@@ -682,6 +681,7 @@ public class SoftKeyboard extends InputMethodService
             getCurrentInputConnection().commitText(
                     String.valueOf((char) primaryCode), 1);
         }
+        updateShiftKeyState(getCurrentInputEditorInfo());
     }
 
     private void handleClose() {
