@@ -618,7 +618,7 @@ public class SoftKeyboard extends InputMethodService
     }
 
     private void updatePredictions() {
-        if (mPredictionOn && mComposing.length() > 0) {
+        if (mPredictionOn && getLanguageCode() == LatinKeyboard.LANGUAGE_VN && mComposing.length() > 0) {
             new Predictor().execute(mComposing.toString());
         }
         else {
@@ -684,7 +684,7 @@ public class SoftKeyboard extends InputMethodService
                 primaryCode = Character.toUpperCase(primaryCode);
             }
         }
-        if (mPredictionOn) {
+        if (mPredictionOn && getLanguageCode() == LatinKeyboard.LANGUAGE_VN) {
             if (isAlphabet(primaryCode) || isSpecialSeparator(primaryCode)) {
                 mComposing.append((char) primaryCode);
                 updatePredictions();
@@ -722,18 +722,23 @@ public class SoftKeyboard extends InputMethodService
     }
 
     private void handleLanguageSwitch() {
-        mPredictionOn = !mPredictionOn;
+        int languageCode = getLanguageCode();
+        int languageResourceCode = R.string.language_vn;
+        switch (languageCode) {
+            case LatinKeyboard.LANGUAGE_VN:
+                languageResourceCode = R.string.language_en;
+                languageCode = LatinKeyboard.LANGUAGE_EN;
+                break;
+            case LatinKeyboard.LANGUAGE_EN:
+                languageResourceCode = R.string.language_vn;
+                languageCode = LatinKeyboard.LANGUAGE_VN;
+                break;
+        }
 
-        int languageResourceCode;
-        int languageCode;
-        if (mPredictionOn) {
+        if (languageCode == LatinKeyboard.LANGUAGE_VN) {
             updatePredictions();
-            languageResourceCode = R.string.language_vn;
-            languageCode = LatinKeyboard.LANGUAGE_VN;
         } else {
             commitTyped(getCurrentInputConnection());
-            languageResourceCode = R.string.language_en;
-            languageCode = LatinKeyboard.LANGUAGE_EN;
         }
 
         if (mInputView != null) {
@@ -743,17 +748,27 @@ public class SoftKeyboard extends InputMethodService
             }
         }
 
+        saveLanguageCode(languageCode);
+    }
+
+    private void handleInputMethodSwitch() {
+        mInputMethodManager.showInputMethodPicker();
+    }
+
+    private void saveLanguageCode(int languageCode) {
         if (mSharedPreferences != null) {
             SharedPreferences.Editor editor = mSharedPreferences.edit();
             editor.putInt(getString(R.string.preference_saved_language), languageCode);
             editor.commit();
         }
-
-        setCandidatesViewShown(mPredictionOn);
     }
 
-    private void handleInputMethodSwitch() {
-        mInputMethodManager.showInputMethodPicker();
+    private int getLanguageCode() {
+        int defaultLanguageCode = LatinKeyboard.LANGUAGE_VN;
+        if (mSharedPreferences != null) {
+            return mSharedPreferences.getInt(getString(R.string.preference_saved_language), defaultLanguageCode);
+        }
+        return defaultLanguageCode;
     }
 
     private void checkToggleCapsLock() {
@@ -895,7 +910,7 @@ public class SoftKeyboard extends InputMethodService
         /** The system calls this to perform work in the UI thread and delivers
          * the result from doInBackground() */
         protected void onPostExecute(PredictionData predictionData) {
-            if (mPredictionOn && predictionData != null) {
+            if (mPredictionOn && getLanguageCode() == LatinKeyboard.LANGUAGE_VN && predictionData != null) {
                 mPredictions = predictionData.Predictions;
                 mWordChoices = predictionData.WordChoices;
                 if (mPredictions != null && mPredictions.size() > 0) {
