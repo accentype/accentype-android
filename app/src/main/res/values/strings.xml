@@ -38,4 +38,12 @@
     <string name="language_selection_title">Input languages</string>
     <string name="select_language">Select input languages</string>
     <string name="general_category">General</string>
+
+    <!-- Preference files -->
+    <string name="preference_file_key">accentypepref</string>
+    <string name="preference_saved_language">savedlanguage</string>
+
+    <string name="language_vn">VN</string>
+    <string name="language_en">EN</string>
+
 </resources>

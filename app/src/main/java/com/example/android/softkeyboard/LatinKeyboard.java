@@ -72,6 +72,9 @@ public class LatinKeyboard extends Keyboard {
      */
     private Key mSavedCancelKey;
 
+    static final int LANGUAGE_VN = 0;
+    static final int LANGUAGE_EN = 1;
+
     public LatinKeyboard(Context context, int xmlLayoutResId) {
         super(context, xmlLayoutResId);
     }
@@ -130,6 +133,10 @@ public class LatinKeyboard extends Keyboard {
      */
     void setCancelKeyVisibility(boolean visible) {
         updateKeyLayout(visible, mLanguageSwitchKey.width > 0);
+    }
+
+    void setLanguageLabel(String languageMode) {
+        mLanguageSwitchKey.label = languageMode;
     }
 
     void updateKeyLayout(boolean isCancelKeyVisible, boolean isLanguageSwitchKeyVisible)

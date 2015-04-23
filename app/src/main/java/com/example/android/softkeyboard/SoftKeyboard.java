@@ -17,6 +17,8 @@
 package com.example.android.softkeyboard;
 
 import android.app.Dialog;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.inputmethodservice.InputMethodService;
 import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
@@ -62,6 +64,7 @@ public class SoftKeyboard extends InputMethodService
      */
     static final boolean PROCESS_HARD_KEYS = true;
 
+    private SharedPreferences mSharedPreferences;
     private InputMethodManager mInputMethodManager;
 
     private LatinKeyboardView mInputView;
@@ -100,6 +103,7 @@ public class SoftKeyboard extends InputMethodService
         mVibrator = (Vibrator)getSystemService(VIBRATOR_SERVICE);
         mWordSeparators = getResources().getString(R.string.word_separators);
         mSpecialSeparators = getResources().getString(R.string.special_separators);
+        mSharedPreferences = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
     }
     
     /**
@@ -136,6 +140,17 @@ public class SoftKeyboard extends InputMethodService
 
     private void setLatinKeyboard(LatinKeyboard nextKeyboard) {
         nextKeyboard.setCancelKeyVisibility(false);
+
+        if (mSharedPreferences != null) {
+            int languageCode = mSharedPreferences.getInt(
+                    getString(R.string.preference_saved_language),
+                    LatinKeyboard.LANGUAGE_VN);
+            String languageMode = languageCode == LatinKeyboard.LANGUAGE_VN ?
+                    getString(R.string.language_vn) :
+                    getString(R.string.language_en);
+            nextKeyboard.setLanguageLabel(languageMode);
+        }
+
         mInputView.setKeyboard(nextKeyboard);
     }
 
@@ -709,11 +724,31 @@ public class SoftKeyboard extends InputMethodService
     private void handleLanguageSwitch() {
         mPredictionOn = !mPredictionOn;
 
+        int languageResourceCode;
+        int languageCode;
         if (mPredictionOn) {
             updatePredictions();
+            languageResourceCode = R.string.language_vn;
+            languageCode = LatinKeyboard.LANGUAGE_VN;
         } else {
             commitTyped(getCurrentInputConnection());
+            languageResourceCode = R.string.language_en;
+            languageCode = LatinKeyboard.LANGUAGE_EN;
         }
+
+        if (mInputView != null) {
+            LatinKeyboard currentKeyboard = (LatinKeyboard)mInputView.getKeyboard();
+            if (currentKeyboard != null) {
+                currentKeyboard.setLanguageLabel(getString(languageResourceCode));
+            }
+        }
+
+        if (mSharedPreferences != null) {
+            SharedPreferences.Editor editor = mSharedPreferences.edit();
+            editor.putInt(getString(R.string.preference_saved_language), languageCode);
+            editor.commit();
+        }
+
         setCandidatesViewShown(mPredictionOn);
     }
 
