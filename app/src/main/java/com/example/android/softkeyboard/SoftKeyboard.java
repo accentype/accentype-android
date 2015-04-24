@@ -859,7 +859,7 @@ public class SoftKeyboard extends InputMethodService
                         totalChoices *= choices[i].length;
                         bins[i + 1] = totalChoices;
                     }
-                    int maxNumPredictions = choices.length < 3 ? 5 : 3;
+                    int maxNumPredictions = choices.length < 3 ? 10 : 5;
                     int numPredictions = Math.min(maxNumPredictions, totalChoices);
 
                     predictions = new ArrayList<>(numPredictions);
