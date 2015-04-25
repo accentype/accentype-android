@@ -415,6 +415,13 @@ public class CandidateView extends View {
     }
 
     private void pickSecondarySuggestionsManually(int index) {
+        if (mSuggestions == null ||
+            mSuggestions.size() == 0 ||
+            mFlingSuggestionIndex < 0 ||
+            mFlingSuggestionIndex >= mSuggestions.size()) {
+            return;
+        }
+
         String chosenWord = mSecondarySuggestions.get(index);
 
         StringBuilder suggestion = new StringBuilder(mSuggestions.get(mFlingSuggestionIndex));
@@ -429,7 +436,7 @@ public class CandidateView extends View {
 
                     if (iWord == mFlingWordIndex) {
                         suggestion.replace(j, j + chosenWord.length(), chosenWord);
-                        mSuggestions.set(mFlingSuggestionIndex, suggestion.toString());
+                        mSuggestions.set(0, suggestion.toString()); // update the first suggestion
                         break;
                     }
                 }
