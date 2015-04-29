@@ -36,11 +36,17 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -72,6 +78,7 @@ public class SoftKeyboard extends InputMethodService
     private CompletionInfo[] mCompletions;
     
     private StringBuilder mComposing = new StringBuilder();
+    private HashMap<Integer, HashMap<String, Byte>> mLocalModelFile;
     private List<String> mPredictions;
     private String[][] mWordChoices;
     private boolean mPredictionOn;
@@ -960,6 +967,62 @@ public class SoftKeyboard extends InputMethodService
                 // TODO: Handle exception
             }
             return null;
+        }
+    }
+
+    private void AddToLocalModel(String rawPhrase, String rawAccents) {
+        if (mLocalModelFile != null) {
+            int hashCode = rawPhrase.hashCode();
+            if (mLocalModelFile.containsKey(hashCode)) {
+
+            }
+        }
+    }
+
+    private class LocalModelLoader extends AsyncTask<Void, Void, HashMap<Integer, HashMap<String, Byte>>> {
+        /** The system calls this to perform work in a worker thread and
+         * delivers it the parameters given to AsyncTask.execute() */
+        protected HashMap<Integer, HashMap<String, Byte>> doInBackground(Void... params) {
+            try
+            {
+                FileInputStream accStream = new FileInputStream("localmodel.txt");
+                BufferedReader accReader = new BufferedReader(new InputStreamReader(accStream, "UTF-8"));
+
+                HashMap<Integer, HashMap<String, Byte>> localModel = new HashMap<>();
+
+                String line;
+                while ((line = accReader.readLine()) != null) {
+                    String[] sections = line.split(":+");
+                    Integer hashCode = Integer.parseInt(sections[0]);
+                    String accentPhrase = sections[1];
+                    Byte count = Byte.parseByte(sections[2]);
+
+                    HashMap<String, Byte> hashEntryValue = new HashMap<>();
+                    if (localModel.containsKey(hashCode)) {
+                        hashEntryValue = localModel.get(hashCode);
+                    }
+                    if (hashEntryValue.containsKey(accentPhrase)) {
+                        hashEntryValue.put(accentPhrase, (byte)(hashEntryValue.get(accentPhrase) + count));
+                    }
+                    else {
+                        hashEntryValue.put(accentPhrase, count);
+                    }
+
+                    localModel.put(hashCode, hashEntryValue);
+                }
+
+                return localModel;
+            }
+            catch (UnsupportedEncodingException ex) { }
+            catch (IOException ex) { }
+
+            return null;
+        }
+
+        /** The system calls this to perform work in the UI thread and delivers
+         * the result from doInBackground() */
+        protected void onPostExecute(HashMap<Integer, HashMap<String, Byte>> localModelFile) {
+            mLocalModelFile = localModelFile;
         }
     }
 
