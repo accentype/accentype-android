@@ -85,6 +85,7 @@ public class SoftKeyboard extends InputMethodService
     private boolean mCompletionOn;
     private int mLastDisplayWidth;
     private boolean mCapsLock;
+    private boolean mCapsLocked;
     private long mLastShiftTime;
     private long mMetaState;
     
@@ -780,11 +781,22 @@ public class SoftKeyboard extends InputMethodService
 
     private void checkToggleCapsLock() {
         long now = System.currentTimeMillis();
-        if (mLastShiftTime + 800 > now) {
-            mCapsLock = !mCapsLock;
-            mLastShiftTime = 0;
-        } else {
+
+        if (mLastShiftTime > 0) {
+            if (mCapsLocked || now - mLastShiftTime > 800) {
+                mCapsLock = !mCapsLock;
+                mLastShiftTime = 0;
+                mCapsLocked = false;
+            }
+            else {
+                mLastShiftTime = now;
+                mCapsLocked = true;
+            }
+        }
+        else {
             mLastShiftTime = now;
+            mCapsLock = !mCapsLock;
+            mCapsLocked = false;
         }
     }
     
