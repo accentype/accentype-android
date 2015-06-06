@@ -93,7 +93,8 @@ public class SoftKeyboard extends InputMethodService
     private int mLastDisplayWidth;
     private boolean mCapsLock;
     private boolean mCapsLocked;
-    private long mLastShiftTime;
+    private long[] mShiftTimes = { 0, 0 };
+    private int mShiftTimeIndex = 0;
     private long mMetaState;
     
     private LatinKeyboard mSymbolsKeyboard;
@@ -518,7 +519,8 @@ public class SoftKeyboard extends InputMethodService
             if (ei != null && ei.inputType != InputType.TYPE_NULL) {
                 caps = getCurrentInputConnection().getCursorCapsMode(attr.inputType);
             }
-            mInputView.setShifted(mCapsLock || caps != 0);
+            mCapsLock = (mCapsLocked || caps != 0);
+            mInputView.setShifted(mCapsLock);
         }
     }
     
@@ -695,7 +697,7 @@ public class SoftKeyboard extends InputMethodService
         if (mQwertyKeyboard == currentKeyboard) {
             // Alphabet keyboard
             checkToggleCapsLock();
-            mInputView.setShifted(mCapsLock || !mInputView.isShifted());
+            mInputView.setShifted(mCapsLock);
         } else if (currentKeyboard == mSymbolsKeyboard) {
             mSymbolsKeyboard.setShifted(true);
             setLatinKeyboard(mSymbolsShiftedKeyboard);
@@ -801,22 +803,15 @@ public class SoftKeyboard extends InputMethodService
     }
 
     private void checkToggleCapsLock() {
-        long now = System.currentTimeMillis();
+        mShiftTimes[mShiftTimeIndex] = System.currentTimeMillis();
+        mShiftTimeIndex = 1 - mShiftTimeIndex;
 
-        if (mLastShiftTime > 0) {
-            if (mCapsLocked || now - mLastShiftTime > 800) {
-                mCapsLock = !mCapsLock;
-                mLastShiftTime = 0;
-                mCapsLocked = false;
-            }
-            else {
-                mLastShiftTime = now;
-                mCapsLocked = true;
-            }
+        // double tap
+        if (mCapsLock && Math.abs(mShiftTimes[0] - mShiftTimes[1]) <= 800) {
+                mCapsLocked = true; // only lock if already in caps mode
         }
         else {
-            mLastShiftTime = now;
-            mCapsLock = !mCapsLock;
+            mCapsLock = !mCapsLock; // otherwise toggle as usual
             mCapsLocked = false;
         }
     }
