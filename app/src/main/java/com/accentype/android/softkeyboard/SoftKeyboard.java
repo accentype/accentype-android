@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.android.softkeyboard;
+package com.accentype.android.softkeyboard;
 
 import android.app.Dialog;
 import android.content.Context;

@@ -1,4 +1,4 @@
-package com.example.android.softkeyboard;
+package com.accentype.android.softkeyboard;
 
 import java.io.File;
 import java.io.FileInputStream;
