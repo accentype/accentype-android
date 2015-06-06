@@ -14,7 +14,7 @@ ay ấy áy ầy ay ây ạy ày
 ba bà ba bá bã bả bạ bấ bă
 bac bắc bác bạc bậc bấc bac băc bâc
 bach bạch bách bach
-bai bài bái bãi bại bải bai bạị bàì
+bai bài bái bãi bại bải bai bàì
 bam bầm bấm bẩm bám băm bẫm bằm bặm bẵm bam bảm bẳm bâm
 ban bạn bắn bản bán bàn ban băn bận bấn bân bẩn bần bẳn bẫn bãn bằn
 bang bằng bảng bang bàng băng báng bẵng bâng bắng bẳng bẫng bấng bãng bạng bậng
@@ -25,11 +25,11 @@ bat bắt bật bất bát bặt bạt bat bầt bât băt
 bau bầu báu bấu bàu bậu bâu bau bạu bẩu
 bay bày bay bây bảy bấy bầy bẫy bẩy bậy báy bãy
 be bé bè bề bẻ bê bế bệ bể be bẹ bẽ bễ
-bech bệch bech
-bem bẻm bèm bem
-ben bên bến bền bén ben bện bèn bẹn bẽn bển
-beng béng beng
-benh bệnh bềnh bênh benh bénh
+bech bệch bech bếch
+bem bẻm bèm bem bém bẽm bẹm bêm bểm bềm bếm bệm bễm
+ben bên bến bền bén ben bện bèn bẹn bẽn bển bẻn
+beng béng bẹng
+benh bệnh bềnh bênh benh
 beo béo bèo beo bẽo bẹo bẻo
 bep bếp bẹp bép bep
 bet bệt bét bẹt bết bet
@@ -55,7 +55,7 @@ boi bởi bói bối bồi bội bơi bời bới bôi bỏi bổi boi bỡi bò
 bom bơm bợm bom bõm bờm bôm bỏm bồm bòm bóm
 bon bốn bộn bọn bôn bồn bổn bon bón bỡn bơn bòn bợn
 bong bóng bong bống bông bỗng bồng bổng bỏng bọng bòng bộng bõng
-boong boong boòng bòông
+boong boong boòng
 bop bóp bộp bốp bớp bợp bọp
 bot bớt bột bọt bốt bot bôt bợt bót
 bu bù bu bụ bú bự bứ bư
@@ -422,7 +422,7 @@ hun hùn hun hún
 hung hùng hứng hung hưng hừng húng hửng hững hủng hũng
 huoc hước huộc huớc hươc
 huom hướm hườm
-huong hương hướng hưởng huống hường huong huồng huởng huơng huớng hưỡng hủơng huông hưong
+huong hương hướng hưởng huống hường huong huồng huớng hưỡng huông
 huou hươu hượu
 hup húp hụp
 hut hút hut hụt
@@ -494,9 +494,9 @@ khoa khỏa khoa khóa khoá khoả
 khoac khoác khóac khoắc
 khoai khoải khoái khoai
 khoam khoằm khoảm
-khoan khoăn khoản khoán khoan khoắn khỏan khoàn khóan
-khoang khoảng khoang khoáng khoắng khóang khoàng khỏang khoạng khoãng
-khoanh khoảnh khoanh khỏanh
+khoan khoăn khoản khoán khoan khoắn khoàn
+khoang khoảng khoang khoáng khoắng khoàng khoạng khoãng
+khoanh khoảnh khoanh
 khoat khoát khoắt khóat
 khoay khoáy
 khoc khóc khốc khọc khoc
@@ -590,7 +590,7 @@ lit lít lit lịt
 liu líu liu lỉu lìu
 lo lo lộ lồ lờ lỗ ló lô lỡ lơ lò lở lọ lố lớ lợ lổ lõ lỏ
 loa loa lòa loà lóa lõa lọa loá loã
-loai loại loài loai lọai loaị lòai
+loai loại loài loai
 loan loan loạn lọan loàn loăn
 loang loãng loạng loáng loang loằng loảng loàng lọang loăng
 loanh loanh
@@ -766,10 +766,10 @@ ngui ngửi ngụi ngùi ngủi ngui ngúi ngũi ngưi
 ngum ngụm ngúm ngum ngủm
 ngung ngưng ngừng ngùng ngửng ngúng ngung ngứng
 nguoc ngược ngước nguoc
-nguoi người nguôi ngươi nguời nguội ngưởi ngưới ngưòi ngừoi nguoi nguồi ngưỡi ngươì nguòi ngườì ngừơi ngừời ngượi
+nguoi người nguôi ngươi nguội ngưởi ngưới nguoi nguồi ngưỡi ngượi
 nguon nguồn ngươn nguon nguốn
-nguong ngưỡng ngượng ngưởng ngường ngương nguồng nguợng nguong
-ngup ngụp
+nguong ngưỡng ngượng ngưởng ngường ngương nguồng nguong
+ngup ngụp ngúp
 nguu ngưu
 nguy nguy ngụy nguỵ
 nguyen nguyễn nguyện nguyên nguyen nguyền nguỵễn nguyẽn nguyển
@@ -783,7 +783,7 @@ nham nhâm nhằm nhầm nhắm nhấm nham nhậm nhàm nhảm nhăm nhẩm nh�
 nhan nhân nhận nhắn nhẫn nhan nhăn nhằn nhãn nhấn nhàn nhản nhẵn nhặn nhạn nhẩn nhần
 nhang nhang nhàng nhặng nhăng nhằng nhãng nhẳng nhẵng nhắng nhâng
 nhanh nhanh nhánh nhảnh nhành nhạnh nhânh
-nhao nhạo nhào nháo nhão nhao nhàở nhậo
+nhao nhạo nhào nháo nhão nhao
 nhap nhập nháp nhấp nhắp nhâp nhạp nhặp nhap
 nhat nhất nhặt nhật nhát nhạt nhât nhắt nhat nhẩt nhầt
 nhau nhau nhảu nhậu nhàu nhẩu nhầu nhâu nhaụ
@@ -799,8 +799,8 @@ nheu nhều nhêu
 nhi nhi nhì nhí nhĩ nhị nhỉ
 nhich nhích
 nhiec nhiếc
-nhiem nhiệm nhiễm nhiem nhiềm nhiêm nhiếm nhiểm nhịêm
-nhien nhiên nhiền nhien nhiến nhiện nhiễn nhịên
+nhiem nhiệm nhiễm nhiem nhiềm nhiêm nhiếm nhiểm
+nhien nhiên nhiền nhien nhiến nhiện nhiễn
 nhiep nhiếp nhiệp
 nhiet nhiệt nhiêt nhiết nhịệt nhiet
 nhieu nhiều nhiêu nhiễu nhieu nhiếu nhiệu nhiêù nhiểu nhìều
@@ -904,7 +904,7 @@ pe pe pê pé
 pha pha phá phả phạ phà phẩ
 phac phác phạc phắc phac
 phach phách phạch
-phai phải phai phái phài phại phảỉ phãi
+phai phải phai phái phài phại phãi
 pham phạm phẩm phầm pham phàm phám phấm phâm phăm phậm phặm phảm phắm
 phan phần phán phân phản phấn phan phận phẫn phàn phăn phẩn phạn phắn
 phang phẳng phảng phăng phàng phang phắng pháng phằng
@@ -924,7 +924,7 @@ phep phép phep
 phet phết phét phẹt phệt phet
 pheu pheu phễu phều
 phi phí phi phì phỉ phị
-phia phía phia phỉa phiá
+phia phía phia phỉa
 phich phích phịch
 phiem phiếm
 phien phiên phiến phiền phiện phiển phien
@@ -1035,7 +1035,7 @@ rum rúm rùm rum rụm
 run run rủn rụn rún
 rung rủng rừng rụng rung rưng rùng rúng rửng
 ruoc rước ruốc rược rươc ruộc
-ruoi ruổi rưởi ruồi rượi rưỡi rưới rười rươi ruội ruoi ruỡi rữơi ruỗi
+ruoi ruổi rưởi ruồi rượi rưỡi rưới rười rươi ruội ruoi ruỗi
 ruom ruộm rườm rươm rướm rượm
 ruon rướn ruôn rứớn rươn
 ruong ruộng ruồng rường rương ruỗng ruông
@@ -1089,7 +1089,7 @@ som sớm sòm sơm som sọm
 son sơn son sờn sởn sớn són sồn sốn sòn sôn sỏn
 song sông sống sóng song sòng sõng sồng sổng sơng
 sooc soóc sooc soọc
-soong soong sôông soòng
+soong soong soòng
 sop sop sộp sọp sốp
 sot sốt sót sọt sột sớt sot sợt
 stand stand
@@ -1108,7 +1108,7 @@ suong sướng sương suông suống sượng suồng sường suong suớng
 suot suốt sướt sượt suôt suot
 sup sụp súp sup
 sut sút sụt sứt sựt sut
-suu sưu sửu suu sứu sưư
+suu sưu sửu suu sứu
 suy suy súy sụy suý suỳ
 suyen suyễn suyển
 suyt suýt suỵt suyt
@@ -1124,7 +1124,7 @@ tao tao táo tạo tảo tào taọ
 tap tập tấp tạp tắp táp tâp tap tăp
 tat tất tắt tật tạt tát tat tât
 tau tàu tấu tẩu tau tậu tầu tâu táu
-tay tay tây tẩy tày tấy táy tậy tảy tầy taỵ
+tay tay tây tẩy tày tấy táy tậy tảy tầy tạy
 te tệ tế tễ tê tề té te tè tẻ tể tẽ
 tech tếch tech tệch
 tem tem tém têm tèm tếm
@@ -1179,7 +1179,7 @@ thoan thoăn thoan thoản thoàn thoắn
 thoang thoảng thoáng thoang thoàng thoắng thỏang thoãng thoằng
 thoat thoạt thoát thoắt thóat thoat
 thoc thốc thóc thọc thộc thoc
-thoi thời thôi thói thơi thổi thỏi thòi thối thới thoi thọi thội thởi thờì thồi thờị thốí
+thoi thời thôi thói thơi thổi thỏi thòi thối thới thoi thọi thội thởi thồi
 thom thỏm thơm thòm thom thóm thởm thớm thõm thôm
 thon thốn thôn thon thổn thỏn thơn thộn thòn
 thong thông thống thong thòng thổng thỏng thồng thộng thõng thỗng
@@ -1187,7 +1187,7 @@ thop thóp
 thot thớt thốt thót thọt thột thổt thợt
 thu thủ thú thu thứ thụ thử thù thư thự thừ thữ
 thua thừa thưa thua thửa thùa thủa thựa thứa thừà thuậ
-thuan thuận thuần thuẫn thuấn thuân thuan thuẩn thụân
+thuan thuận thuần thuẫn thuấn thuân thuan thuẩn
 thuat thuật thuât thuat
 thuc thức thực thúc thục thuc thưc
 thue thuê thuế thue thuể thuễ
@@ -1195,10 +1195,10 @@ thui thủi thui thùi thúi thụi
 thum thum thủm thùm
 thun thun thùn
 thung thùng thủng thừng thúng thung thững thụng thưng thũng
-thuo thuở thủo thưở thủơ thửơ
-thuoc thuốc thuộc thước thuôc thược thuớc thuoc
+thuo thưở
+thuoc thuốc thuộc thước thược thuoc
 thuom thuộm thươm
-thuong thưởng thường thương thuởng thượng thuong thuơng thuồng thướng thuờng thuổng thưòng thửơng thừơng thưỏng thưong thuông
+thuong thưởng thường thương thượng thuong thuồng thướng thuổng thuông
 thuot thuột thướt thượt thuot thuốt
 thut thụt thút thut
 thuy thủy thụy thúy thuỷ thùy thuy thuý thuỳ thuỵ
@@ -1209,7 +1209,7 @@ tia tia tỉa tía tịa tĩa
 tich tịch tích tich
 tiec tiệc tiếc tiec tiêc
 tiem tiềm tiệm tiêm tiếm tiểm tiem
-tien tiên tiền tiến tiễn tiện tien tiẻn tiển tìền
+tien tiên tiền tiến tiễn tiện tien tiển
 tieng tiếng tiềng tiêng tiểng tieng tíêng
 tiep tiếp tiệp tiêp tiep
 tiet tiết tiệt tiet tiét tiêt tíết
@@ -1220,14 +1220,14 @@ tinh tình tỉnh tính tĩnh tinh tịnh
 tit tịt tít tit
 tiu tíu tĩu tiu tịu tìu
 to tỏ tổ to tố tờ tô tơ tò tộ tớ tồ tỗ tợ tó tọ tở tõ
-toa tòa tỏa tọa toa toà toả toạ tóa
+toa tòa tỏa tọa toa tóa
 toac toạc toác
 toai toại toái toài toai toải
 toan toàn toán toan toản tòan tóan toạn
 toang toang toàng toáng
 toanh toanh toành
-toat toát toạt tóat
-toc tốc tóc tộc tọc toc tôc
+toat toát toạt
+toc tốc tóc tộc tọc toc
 toe toe tóe toé toẹ toè tõe
 toet toét toẹt
 toi tối tôi tới tơi tội tồi tỏi tòi toi tời tợi tổi tọi tói
@@ -1260,7 +1260,7 @@ tria trỉa trịa trìa
 trich trích trịch trich
 trien triển triền triễn triện triên trien triến
 trieng triềng triêng
-triet triết triệt triet triểt
+triet triết triệt triet
 trieu triệu triều triêu trieu triểu trịêu
 trinh trình trịnh trinh trĩnh trính
 triu trĩu trìu tríu trịu
@@ -1301,23 +1301,24 @@ tuoc tước tuốc tuộc tược tuoc
 tuoi tuổi tươi tưởi tưới tuơi tuoi tuổỉ tuối tuồi tuôi tuới tưoi tưổi
 tuom tươm
 tuon tuồn tuôn tướn
-tuong tương tượng tướng tường tưởng tuông tuóng tuờng tưọng tuong tuồng tuơng tửong tuởng tuớng tuợng
+tuong tương tượng tướng tường tưởng tuông tuong tuồng
 tuot tuột tuốt tướt tượt
 tuu tựu tửu tưu tưư từu tữu
 tuy tùy tuy tuỳ túy tuý tuỵ tụy tụỵ tủy tuỷ
-tuyen tuyến tuyển tuyên tuyền tuyen tuyện tuỵến
-tuyet tuyệt tuyết tuyet tuyêt tuỵêt
+tuyen tuyến tuyển tuyên tuyền tuyen tuyện
+tuyet tuyệt tuyết tuyet
 ty tỷ tỵ ty tỳ tý
 u ủ ừ ú u ứ ư ụ ù ử ự
-ua ưa ùa úa ứa ửa ủa ua ừa uà
+ua ưa ùa úa ứa ửa ủa ua ừa
 uan uẩn uan uán uấn uần
 uat uất uật
+uay uầy
 uc ức úc ục uc ực
 ue uể uế ue
 ui ủi ui úi ùi ửi
 um úm um ùm ừm ủm
 ung ung ứng ưng ủng ửng ùng úng ừng ũng
-uoc ước uớc uộc ứớc ược uốc uoc ươc ưóc
+uoc ước uộc ược uốc uoc
 uoi ươi ưới uổi uối uôi
 uom ươm uơm ướm uom
 uon ưỡn uốn ườn ươn uôn uồn uon
@@ -1352,9 +1353,9 @@ vi vị vì ví vĩ vi vỉ
 via vỉa vía vĩa via vìa
 viec việc viêc viếc vịêc viec
 viem viêm viểm viễm viếm
-vien viên viện viễn viền viển vien vièn viến
+vien viên viện viễn viền viển vien viến
 vieng viếng vieng viêng viềng
-viet việt viết viêt vịêt viet
+viet việt viết viêt viet
 vin vịn vin vỉn
 vinh vinh vĩnh vịnh vình vính
 vit vít vịt vit
@@ -1437,7 +1438,7 @@ xum xúm xum xùm
 xung xung xúng xứng xưng xựng xửng xủng xững xừng
 xuoc xước xược xươc
 xuoi xuôi xượi
-xuong xuống xương xưởng xướng xường xuồng xuông xuong xuơng xuởng
+xuong xuống xương xưởng xướng xường xuồng xuông xuong
 xup xụp xúp
 xut xút
 xuy xúy xuy xùy
