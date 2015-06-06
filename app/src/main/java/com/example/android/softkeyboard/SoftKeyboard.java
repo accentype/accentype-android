@@ -1011,7 +1011,12 @@ public class SoftKeyboard extends InputMethodService
         try {
             // TODO: for now skip input until model has been loaded
             if (mLocalModel != null && mLocalModelBinaryWriter != null) {
-                int hashCode = rawPhrase.hashCode();
+                String trimmedPhrase = rawPhrase.trim();
+                String trimmedAccentPhrase = accentPhrase.trim();
+                if (trimmedPhrase.length() == 0 || trimmedAccentPhrase.length() == 0) {
+                    return;
+                }
+                int hashCode = trimmedPhrase.hashCode();
                 HashMap<String, LocalModelItemData> hashEntryValue;
                 LocalModelItemData localModelItem;
                 if (mLocalModel.containsKey(hashCode)) {
@@ -1019,13 +1024,14 @@ public class SoftKeyboard extends InputMethodService
                 } else {
                     hashEntryValue = new HashMap<>();
                 }
-                if (hashEntryValue.containsKey(accentPhrase)) {
-                    localModelItem = hashEntryValue.get(accentPhrase);
+
+                if (hashEntryValue.containsKey(trimmedAccentPhrase)) {
+                    localModelItem = hashEntryValue.get(trimmedAccentPhrase);
                 } else {
                     localModelItem = new LocalModelItemData();
                 }
                 localModelItem.count++;
-                hashEntryValue.put(accentPhrase, localModelItem);
+                hashEntryValue.put(trimmedAccentPhrase, localModelItem);
 
                 FileChannel fileChannel = mLocalModelOutputStream.getChannel();
                 if (localModelItem.offset >= 0) {
@@ -1038,7 +1044,7 @@ public class SoftKeyboard extends InputMethodService
                     fileChannel.position(fileChannel.size()); // seek to end
                     mLocalModelBinaryWriter.writeInt(hashCode); // hash
 
-                    byte[] accentBytes = accentPhrase.getBytes("UTF-8"); // accent string
+                    byte[] accentBytes = trimmedAccentPhrase.getBytes("UTF-8"); // accent string
                     mLocalModelBinaryWriter.writeByte(accentBytes.length);
                     mLocalModelBinaryWriter.write(accentBytes);
 
@@ -1055,11 +1061,15 @@ public class SoftKeyboard extends InputMethodService
     }
 
     private String getFromLocalModel(String rawPhrase) {
-        String topPrediction = null;
         if (mLocalModel != null) {
-            // TODO: trim before checking
-            int hashCode = rawPhrase.hashCode();
+            String trimmedPhrase = rawPhrase.trim();
+            if (trimmedPhrase.length()  == 0) {
+                return null;
+            }
+            int hashCode = trimmedPhrase.hashCode();
             if (mLocalModel.containsKey(hashCode)) {
+                String topPrediction = null;
+
                 HashMap<String, LocalModelItemData> hashEntryValue = mLocalModel.get(hashCode);
 
                 int maxCount = -1;
@@ -1072,9 +1082,21 @@ public class SoftKeyboard extends InputMethodService
                         topPrediction = (String)pair.getKey();
                     }
                 }
+
+                // pad prediction with whitespaces in the original phrase
+                int i = 0;
+                for (; i < rawPhrase.length(); i++) {
+                    if (!Character.isWhitespace(rawPhrase.charAt(i))) {
+                        break;
+                    }
+                }
+                StringBuilder finalPrediction = new StringBuilder(rawPhrase);
+                finalPrediction.replace(i, i + topPrediction.length(), topPrediction);
+
+                return finalPrediction.toString();
             }
         }
-        return topPrediction;
+        return null;
     }
 
     private class LocalModelLoader extends AsyncTask<Void, Void, HashMap<Integer, HashMap<String, LocalModelItemData>>> {
