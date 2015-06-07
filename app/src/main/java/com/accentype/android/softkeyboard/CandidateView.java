@@ -110,7 +110,7 @@ public class CandidateView extends View {
 
         new DictionaryLoader().execute();
 
-        mGestureDetector = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {
+        mGestureDetector = new GestureDetector(null, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2,
                     float distanceX, float distanceY) {
