@@ -80,8 +80,7 @@ public class CandidateView extends View {
 
     /**
      * Construct a CandidateView for showing suggested words for completion.
-     * @param context
-     * @param attrs
+     * @param context The context object
      */
     public CandidateView(Context context) {
         super(context);
@@ -199,7 +198,7 @@ public class CandidateView extends View {
     
     /**
      * A connection back to the service to communicate with the text field
-     * @param listener
+     * @param listener The listener object
      */
     public void setService(SoftKeyboard listener) {
         mService = listener;
@@ -406,7 +405,7 @@ public class CandidateView extends View {
     /**
      * For flick through from keyboard, call this method with the x coordinate of the flick 
      * gesture.
-     * @param x
+     * @param x The horizontal location of the suggestion
      */
     public void takeSuggestionAt(float x) {
         mTouchX = (int) x;

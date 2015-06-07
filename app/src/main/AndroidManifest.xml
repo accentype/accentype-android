@@ -11,7 +11,7 @@
         android:requiresSmallestWidthDp="600"
         android:compatibleWidthLimitDp="600"
         android:largestWidthLimitDp="600"/>
-    <application android:label="@string/ime_name">
+    <application android:label="@string/ime_name" android:icon="@drawable/icon">
         <service android:name="SoftKeyboard"
                 android:permission="android.permission.BIND_INPUT_METHOD">
             <intent-filter>
