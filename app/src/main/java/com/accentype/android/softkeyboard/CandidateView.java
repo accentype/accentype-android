@@ -68,6 +68,7 @@ public class CandidateView extends View {
 
     private int mColorNormal;
     private int mColorRecommended;
+    private int mColorSecondaryRecommended;
     private int mColorOther;
     private int mVerticalPadding;
     private Paint mPaint;
@@ -99,6 +100,7 @@ public class CandidateView extends View {
         
         mColorNormal = r.getColor(R.color.candidate_normal);
         mColorRecommended = r.getColor(R.color.candidate_recommended);
+        mColorSecondaryRecommended = r.getColor(R.color.candidate_secondary_recommended);
         mColorOther = r.getColor(R.color.candidate_other);
         mVerticalPadding = r.getDimensionPixelSize(R.dimen.candidate_vertical_padding);
         
@@ -248,7 +250,8 @@ public class CandidateView extends View {
             }
         }
         int x = 0;
-        List<String> suggestions = mSecondarySuggestions != null ? mSecondarySuggestions : mSuggestions;
+        boolean showingSecondarySuggestions = mSecondarySuggestions != null;
+        List<String> suggestions = showingSecondarySuggestions ? mSecondarySuggestions : mSuggestions;
         final int count = Math.min(MAX_SUGGESTIONS, suggestions.size());
         final int height = getHeight();
         final Rect bgPadding = mBgPadding;
@@ -280,7 +283,7 @@ public class CandidateView extends View {
             if (canvas != null) {
                 if ((i == 1 && !typedWordValid) || (i == 0 && typedWordValid)) {
                     paint.setFakeBoldText(true);
-                    paint.setColor(mColorRecommended);
+                    paint.setColor(showingSecondarySuggestions ? mColorSecondaryRecommended : mColorRecommended);
                 } else if (i != 0) {
                     paint.setColor(mColorOther);
                 }
