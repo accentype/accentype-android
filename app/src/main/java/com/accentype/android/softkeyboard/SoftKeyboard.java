@@ -920,7 +920,10 @@ public class SoftKeyboard extends InputMethodService
                             prediction.replace(q, q + choice.length(), choice);
                             q += choice.length();
                         }
-                        predictions.add(prediction.toString());
+                        String predictionString = prediction.toString();
+                        if (!predictions.contains(predictionString)) {
+                            predictions.add(predictionString);
+                        }
                     }
                 }
                 else
