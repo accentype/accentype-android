@@ -130,7 +130,9 @@ public class CandidateView extends View {
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
             {
                 // Already displaying secondary suggestions so flinging should do nothing
-                if (mSecondarySuggestions != null) {
+                // Or if this is a single-word query, in that case all choices should already be shown
+                if (mSecondarySuggestions != null ||
+                    (mWordChoices != null && mWordChoices.length == 1)) {
                     return false;
                 }
                 if (velocityY > 100 && mWordChoices != null)
