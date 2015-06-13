@@ -141,32 +141,7 @@ public class CandidateView extends View {
                     if (iWord < 0) {
                         return false;
                     }
-                    String[] additionalChoices = null;
-                    if (mDictionary != null && mComposing != null) {
-                        String[] rawWords = mComposing.trim().split("\\s+");
-                        if (iWord < rawWords.length) {
-                            String rawWord = rawWords[iWord];
-                            String rawWordLower = rawWord.toLowerCase();
-                            if (mDictionary.containsKey(rawWordLower)) {
-                                List<Integer> upperCaseLocations = new ArrayList<>();
-                                for (int i = 0; i < rawWord.length(); i++) {
-                                    if (Character.isUpperCase(rawWord.charAt(i))) {
-                                        upperCaseLocations.add(i);
-                                    }
-                                }
-                                // Normalize case w.r.t raw word
-                                String[] dictionaryChoices = mDictionary.get(rawWordLower);
-                                additionalChoices = new String[dictionaryChoices.length];
-                                for (int i = 0; i < dictionaryChoices.length; i++) {
-                                    char[] choiceChars = dictionaryChoices[i].toCharArray();
-                                    for (int j = 0; j < upperCaseLocations.size(); j++) {
-                                        choiceChars[j] = Character.toUpperCase(choiceChars[j]);
-                                    }
-                                    additionalChoices[i] = new String(choiceChars);
-                                }
-                            }
-                        }
-                    }
+                    String[] additionalChoices = getFromDictionary(mComposing, iWord);
                     mSecondarySuggestions = new ArrayList<>(Arrays.asList(mWordChoices[iWord]));
                     if (additionalChoices != null) {
                         for (int k = 0; k < additionalChoices.length; k++) {
@@ -508,6 +483,40 @@ public class CandidateView extends View {
     private class TouchLocation {
         public int WordIndex;
         public int SuggestionIndex;
+    }
+
+    // Get first word
+    public String[] getFromDictionary(String query) {
+        return getFromDictionary(query, 0);
+    }
+    public String[] getFromDictionary(String query, int iWord) {
+        if (mDictionary != null && query != null) {
+            String[] rawWords = query.trim().split("\\s+");
+            if (iWord < rawWords.length) {
+                String rawWord = rawWords[iWord];
+                String rawWordLower = rawWord.toLowerCase();
+                if (mDictionary.containsKey(rawWordLower)) {
+                    List<Integer> upperCaseLocations = new ArrayList<>();
+                    for (int i = 0; i < rawWord.length(); i++) {
+                        if (Character.isUpperCase(rawWord.charAt(i))) {
+                            upperCaseLocations.add(i);
+                        }
+                    }
+                    // Normalize case w.r.t raw word
+                    String[] dictionaryChoices = mDictionary.get(rawWordLower);
+                    String[] additionalChoices = new String[dictionaryChoices.length];
+                    for (int i = 0; i < dictionaryChoices.length; i++) {
+                        char[] choiceChars = dictionaryChoices[i].toCharArray();
+                        for (int j = 0; j < upperCaseLocations.size(); j++) {
+                            choiceChars[j] = Character.toUpperCase(choiceChars[j]);
+                        }
+                        additionalChoices[i] = new String(choiceChars);
+                    }
+                    return additionalChoices;
+                }
+            }
+        }
+        return null;
     }
 
     private class DictionaryLoader extends AsyncTask<Void, Void, HashMap<String, String[]>> {

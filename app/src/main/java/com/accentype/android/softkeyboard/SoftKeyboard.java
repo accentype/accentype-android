@@ -887,7 +887,7 @@ public class SoftKeyboard extends InputMethodService
 
             if (choices != null) {
                 List<String> predictions;
-                if (choices.length < 10)
+                if (choices.length < 10) // if query is less than 10 words
                 {
                     int[] bins = new int[choices.length + 1];
                     int totalChoices = 1;
@@ -896,6 +896,7 @@ public class SoftKeyboard extends InputMethodService
                         totalChoices *= choices[i].length;
                         bins[i + 1] = totalChoices;
                     }
+                    // max number of predictions to display
                     int maxNumPredictions = choices.length < 3 ? 10 : 5;
                     int numPredictions = Math.min(maxNumPredictions, totalChoices);
 
@@ -923,6 +924,18 @@ public class SoftKeyboard extends InputMethodService
                         String predictionString = prediction.toString();
                         if (!predictions.contains(predictionString)) {
                             predictions.add(predictionString);
+                        }
+
+                        // If single-word query, fill suggestions from dictionary regardless of max
+                        if (choices.length == 1) {
+                            String[] dictPredictions = mCandidateView.getFromDictionary(query.toString());
+                            if (dictPredictions != null) {
+                                for (String suggestion : dictPredictions) {
+                                    if (!predictions.contains(suggestion)) {
+                                        predictions.add(suggestion);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
