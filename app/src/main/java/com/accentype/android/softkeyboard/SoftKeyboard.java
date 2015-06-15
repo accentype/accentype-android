@@ -649,8 +649,9 @@ public class SoftKeyboard extends InputMethodService
     }
 
     private void updatePredictions() {
-        if (mPredictionOn && getLanguageCode() == LatinKeyboard.LANGUAGE_VN && mComposing.length() > 0) {
-            new Predictor().execute(mComposing.toString());
+        String composing = mComposing.toString();
+        if (mPredictionOn && getLanguageCode() == LatinKeyboard.LANGUAGE_VN && composing.trim().length() > 0) {
+            new Predictor().execute(composing);
         }
         else {
             mPredictions = EMPTY_LIST;
@@ -931,8 +932,9 @@ public class SoftKeyboard extends InputMethodService
                             String[] dictPredictions = mCandidateView.getFromDictionary(query.toString());
                             if (dictPredictions != null) {
                                 for (String suggestion : dictPredictions) {
-                                    if (!predictions.contains(suggestion)) {
-                                        predictions.add(suggestion);
+                                    String normalizedSuggestion = replaceKeepingWhiteSpace(composing[0], suggestion);
+                                    if (normalizedSuggestion != null && !predictions.contains(normalizedSuggestion)) {
+                                        predictions.add(normalizedSuggestion);
                                     }
                                 }
                             }
@@ -1021,6 +1023,32 @@ public class SoftKeyboard extends InputMethodService
             }
             return null;
         }
+    }
+
+    /**
+     * Replaces portion of string starting from the first non-whitespace character
+     * with the specified string.
+     *
+     * @param original
+     *            the original string.
+     * @param newString
+     *            the replacement string.
+     * @return new string containing the replacement string.
+     */
+    private String replaceKeepingWhiteSpace(String original, String newString) {
+        StringBuilder sb = new StringBuilder(original);
+        int start;
+        for (start = 0; start < original.length(); start++) {
+            if (!Character.isWhitespace(original.charAt(start))) {
+                break;
+            }
+        }
+        int end = start + newString.length();
+        if (end > original.length()) {
+            return null;
+        }
+        sb.replace(start, end, newString);
+        return sb.toString();
     }
 
     private void addToLocalModel(String rawPhrase, String accentPhrase) {
