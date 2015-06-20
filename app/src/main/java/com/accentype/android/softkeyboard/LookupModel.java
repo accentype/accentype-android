@@ -15,9 +15,9 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Created by lhoang on 6/20/2015.
+ * Simple lookup model.
  */
-public class LookupModel {
+public class LookupModel implements BaseModel {
 
     private HashMap<Integer, HashMap<String, LocalModelItemData>> mLocalModel;
     private DataOutputStream mLocalModelBinaryWriter;
@@ -35,7 +35,7 @@ public class LookupModel {
         return instance;
     }
 
-    public String predict(String rawPhrase) {
+    @Override public String predict(String rawPhrase) {
         if (mLocalModel != null) {
             String trimmedPhrase = rawPhrase.trim();
             if (trimmedPhrase.length() == 0) {
@@ -74,7 +74,7 @@ public class LookupModel {
         return null;
     }
 
-    public void learn(String rawPhrase, String accentPhrase) {
+    @Override public void learn(String rawPhrase, String accentPhrase) {
         try {
             // TODO: for now skip input until model has been loaded
             if (mLocalModel != null && mLocalModelBinaryWriter != null) {

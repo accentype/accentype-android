@@ -36,8 +36,6 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -68,9 +66,6 @@ public class SoftKeyboard extends InputMethodService
 
     private SharedPreferences mSharedPreferences;
     private InputMethodManager mInputMethodManager;
-
-    private DataOutputStream mLocalModelBinaryWriter;
-    private FileOutputStream mLocalModelOutputStream;
 
     private LatinKeyboardView mInputView;
     private CandidateView mCandidateView;
