@@ -36,22 +36,14 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Example of writing an input method for a soft keyboard.  This code is
@@ -85,7 +77,7 @@ public class SoftKeyboard extends InputMethodService
     private CompletionInfo[] mCompletions;
     
     private StringBuilder mComposing = new StringBuilder();
-    private HashMap<Integer, HashMap<String, LocalModelItemData>> mLocalModel;
+    private LookupModel mLocalModel;
     private List<String> mPredictions;
     private String[][] mWordChoices;
     private boolean mPredictionOn;
@@ -121,7 +113,7 @@ public class SoftKeyboard extends InputMethodService
         mSpecialSeparators = getResources().getString(R.string.special_separators);
         mSharedPreferences = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
-        new LocalModelLoader(this).execute();
+        mLocalModel = LookupModel.getInstance(this);
     }
     
     /**
@@ -485,7 +477,7 @@ public class SoftKeyboard extends InputMethodService
             if (suggestions != null && suggestions.size() > 0) {
                 String prediction = suggestions.get(0);
                 inputConnection.commitText(prediction, prediction.length());
-                addToLocalModel(mComposing.toString(), prediction);
+                mLocalModel.learn(mComposing.toString(), prediction);
             }
             else {
                 inputConnection.commitText(mComposing, mComposing.length());
@@ -502,7 +494,7 @@ public class SoftKeyboard extends InputMethodService
             if (suggestions != null && index >= 0 && index < suggestions.size()) {
                 String prediction = suggestions.get(index);
                 getCurrentInputConnection().commitText(prediction, prediction.length());
-                addToLocalModel(mComposing.toString(), prediction);
+                mLocalModel.learn(mComposing.toString(), prediction);
             }
         }
     }
@@ -884,7 +876,7 @@ public class SoftKeyboard extends InputMethodService
             StringBuilder query = new StringBuilder(composing[0]);
             String[][] choices = predict(query);
 
-            String localPrediction = getFromLocalModel(composing[0]);
+            String localPrediction = mLocalModel.predict(composing[0]);
 
             if (choices != null) {
                 List<String> predictions;
@@ -1051,197 +1043,8 @@ public class SoftKeyboard extends InputMethodService
         return sb.toString();
     }
 
-    private void addToLocalModel(String rawPhrase, String accentPhrase) {
-        try {
-            // TODO: for now skip input until model has been loaded
-            if (mLocalModel != null && mLocalModelBinaryWriter != null) {
-                String trimmedPhrase = rawPhrase.trim();
-                String trimmedAccentPhrase = accentPhrase.trim();
-                if (trimmedPhrase.length() == 0 || trimmedAccentPhrase.length() == 0) {
-                    return;
-                }
-                int hashCode = trimmedPhrase.hashCode();
-                HashMap<String, LocalModelItemData> hashEntryValue;
-                LocalModelItemData localModelItem;
-                if (mLocalModel.containsKey(hashCode)) {
-                    hashEntryValue = mLocalModel.get(hashCode);
-                } else {
-                    hashEntryValue = new HashMap<>();
-                }
-
-                if (hashEntryValue.containsKey(trimmedAccentPhrase)) {
-                    localModelItem = hashEntryValue.get(trimmedAccentPhrase);
-                } else {
-                    localModelItem = new LocalModelItemData();
-                }
-                localModelItem.count++;
-                hashEntryValue.put(trimmedAccentPhrase, localModelItem);
-
-                FileChannel fileChannel = mLocalModelOutputStream.getChannel();
-                if (localModelItem.offset >= 0) {
-                    fileChannel.position(localModelItem.offset);
-                    mLocalModelBinaryWriter.writeInt(localModelItem.count);
-                } else {
-                    fileChannel.position(4);
-                    mLocalModelBinaryWriter.writeInt(mLocalModel.size()); // update count
-
-                    fileChannel.position(fileChannel.size()); // seek to end
-                    mLocalModelBinaryWriter.writeInt(hashCode); // hash
-
-                    byte[] accentBytes = trimmedAccentPhrase.getBytes("UTF-8"); // accent string
-                    mLocalModelBinaryWriter.writeByte(accentBytes.length);
-                    mLocalModelBinaryWriter.write(accentBytes);
-
-                    // update offset in memory
-                    localModelItem.offset = fileChannel.position();
-                    mLocalModelBinaryWriter.writeInt(1); // count
-                }
-
-                // update model
-                mLocalModel.put(hashCode, hashEntryValue);
-            }
-        }
-        catch (IOException ex) { }
-    }
-
-    private String getFromLocalModel(String rawPhrase) {
-        if (mLocalModel != null) {
-            String trimmedPhrase = rawPhrase.trim();
-            if (trimmedPhrase.length()  == 0) {
-                return null;
-            }
-            int hashCode = trimmedPhrase.hashCode();
-            if (mLocalModel.containsKey(hashCode)) {
-                String topPrediction = null;
-
-                HashMap<String, LocalModelItemData> hashEntryValue = mLocalModel.get(hashCode);
-
-                int maxCount = -1;
-                Iterator it = hashEntryValue.entrySet().iterator();
-                while (it.hasNext()) {
-                    Map.Entry pair = (Map.Entry)it.next();
-                    LocalModelItemData localModelItemData = (LocalModelItemData)pair.getValue();
-                    if (maxCount < localModelItemData.count) {
-                        maxCount = localModelItemData.count;
-                        topPrediction = (String)pair.getKey();
-                    }
-                }
-
-                // pad prediction with whitespaces in the original phrase
-                int i = 0;
-                for (; i < rawPhrase.length(); i++) {
-                    if (!Character.isWhitespace(rawPhrase.charAt(i))) {
-                        break;
-                    }
-                }
-                StringBuilder finalPrediction = new StringBuilder(rawPhrase);
-                finalPrediction.replace(i, i + topPrediction.length(), topPrediction);
-
-                return finalPrediction.toString();
-            }
-        }
-        return null;
-    }
-
-    private class LocalModelLoader extends AsyncTask<Void, Void, HashMap<Integer, HashMap<String, LocalModelItemData>>> {
-        private Context mContext;
-
-        public LocalModelLoader(Context context) {
-            mContext = context;
-        }
-
-        /** The system calls this to perform work in a worker thread and
-         * delivers it the parameters given to AsyncTask.execute() */
-        protected HashMap<Integer, HashMap<String, LocalModelItemData>> doInBackground(Void... params) {
-            HashMap<Integer, HashMap<String, LocalModelItemData>> localModel = new HashMap<>();
-
-            try
-            {
-                String localModelFileName = getString(R.string.model_file_name);
-                File localModelFile = new File(mContext.getFilesDir(), localModelFileName);
-
-                mLocalModelOutputStream = new FileOutputStream(localModelFile);
-                mLocalModelBinaryWriter = new DataOutputStream(mLocalModelOutputStream);
-
-                // if not exists, then write header information and return
-                if (!localModelFile.exists()) {
-                    mLocalModelBinaryWriter.writeInt(1); // model version
-                    mLocalModelBinaryWriter.writeInt(0); // number of entries
-                    return localModel;
-                }
-
-                CountingFileInputStream fileInputStream = new CountingFileInputStream(localModelFile);
-                DataInputStream binaryReader = new DataInputStream(fileInputStream);
-
-                try {
-                    int modelVersion = binaryReader.readInt();
-                    int numEntries = binaryReader.readInt();
-
-                    for (int i = 0; i < numEntries; i++) {
-                        // Read hash code
-                        int hashCode = binaryReader.readInt();
-
-                        // Read accent string
-                        byte numUnicodeBytes = binaryReader.readByte();
-                        byte[] unicodeBytes = new byte[numUnicodeBytes];
-                        binaryReader.read(unicodeBytes);
-                        String accentString = new String(unicodeBytes, "UTF-8");
-
-                        HashMap<String, LocalModelItemData> hashEntryValue;
-                        LocalModelItemData itemData;
-
-                        if (localModel.containsKey(hashCode)) {
-                            hashEntryValue = localModel.get(hashCode);
-                        } else {
-                            hashEntryValue = new HashMap<>();
-                        }
-                        if (hashEntryValue.containsKey(accentString)) {
-                            itemData = hashEntryValue.get(accentString);
-                        } else {
-                            itemData = new LocalModelItemData();
-                        }
-
-                        // Set position to the count
-                        itemData.offset = fileInputStream.getOffset();
-
-                        // Read count
-                        byte count = binaryReader.readByte();
-
-                        itemData.count += count;
-
-                        hashEntryValue.put(accentString, itemData);
-
-                        localModel.put(hashCode, hashEntryValue);
-                    }
-                }
-                finally {
-                    binaryReader.close();
-                }
-            }
-            catch (UnsupportedEncodingException ex) { }
-            catch (IOException ex) { }
-
-            return localModel;
-        }
-
-        /** The system calls this to perform work in the UI thread and delivers
-         * the result from doInBackground() */
-        protected void onPostExecute(HashMap<Integer, HashMap<String, LocalModelItemData>> localModelFile) {
-            mLocalModel = localModelFile;
-        }
-    }
-
     private class PredictionData {
         public List<String> Predictions;
         public String[][] WordChoices;
-    }
-
-    private class LocalModelItemData {
-        public LocalModelItemData() {
-            offset = -1;
-        }
-
-        public byte count;
-        public long offset;
     }
 }
