@@ -16,4 +16,9 @@ interface BaseModel {
      * @param accentPhrase The associated accented phrase.
      */
     void learn(String rawPhrase, String accentPhrase);
+
+    /**
+     * Gets the version number for this model type.
+     */
+    int version();
 }

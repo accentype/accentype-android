@@ -127,6 +127,10 @@ public class LookupModel implements BaseModel {
         catch (IOException ex) { }
     }
 
+    @Override public int version() {
+        return ModelVersion.LOOKUP;
+    }
+
     private class LoadFromFile extends AsyncTask<Void, Void, HashMap<Integer, HashMap<String, LocalModelItemData>>> {
         private Context mContext;
 
@@ -149,7 +153,7 @@ public class LookupModel implements BaseModel {
 
                 // if not exists, then write header information and return
                 if (!localModelFile.exists()) {
-                    mLocalModelBinaryWriter.writeInt(ModelVersion.LOOKUP); // model version
+                    mLocalModelBinaryWriter.writeInt(version()); // model version
                     mLocalModelBinaryWriter.writeInt(0); // number of entries
                     return localModel;
                 }
@@ -159,7 +163,7 @@ public class LookupModel implements BaseModel {
 
                 try {
                     int modelVersion = binaryReader.readInt();
-                    if (modelVersion != ModelVersion.LOOKUP) {
+                    if (modelVersion != version()) {
                         return null;
                     }
                     int numEntries = binaryReader.readInt();

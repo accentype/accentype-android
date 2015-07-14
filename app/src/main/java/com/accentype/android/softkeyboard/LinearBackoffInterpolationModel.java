@@ -23,5 +23,10 @@ public class LinearBackoffInterpolationModel implements BaseModel {
     }
 
     @Override public void learn(String rawPhrase, String accentPhrase) {
+
+    }
+
+    @Override public int version() {
+        return ModelVersion.LINEAR_BACKOFF_INTERPOLATION;
     }
 }
