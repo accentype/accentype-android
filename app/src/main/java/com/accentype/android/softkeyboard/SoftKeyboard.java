@@ -72,7 +72,7 @@ public class SoftKeyboard extends InputMethodService
     private CompletionInfo[] mCompletions;
     
     private StringBuilder mComposing = new StringBuilder();
-    private LookupModel mLocalModel;
+    private BaseModel mLocalModel;
     private List<String> mPredictions;
     private String[][] mWordChoices;
     private boolean mPredictionOn;
@@ -108,7 +108,7 @@ public class SoftKeyboard extends InputMethodService
         mSpecialSeparators = getResources().getString(R.string.special_separators);
         mSharedPreferences = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
-        mLocalModel = LookupModel.getInstance(this);
+        mLocalModel = ModelFactory.create(ModelVersion.LINEAR_BACKOFF_INTERPOLATION, this);
     }
     
     /**
