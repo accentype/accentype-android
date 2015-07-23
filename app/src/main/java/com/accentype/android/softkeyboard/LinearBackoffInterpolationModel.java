@@ -46,8 +46,8 @@ public class LinearBackoffInterpolationModel implements BaseModel {
             ComputeAccentScore(words, i, beta2, model2, 2, accScoreMap);
             ComputeAccentScore(words, i, beta1, model1, 1, accScoreMap);
 
+            String bestPrediction = null;
             if (accScoreMap != null && accScoreMap.size() > 0) {
-                String bestPrediction = null;
                 double bestScore = -1;
                 for (String accentPhrase : accScoreMap.keySet()) {
                     double score = accScoreMap.get(accentPhrase);
@@ -56,12 +56,12 @@ public class LinearBackoffInterpolationModel implements BaseModel {
                         bestScore = score;
                     }
                 }
-                if (bestPrediction != null) {
-                    sbPredictions.append(bestPrediction);
-                }
-                else {
-                    sbPredictions.append(words[i]);
-                }
+            }
+            if (bestPrediction != null) {
+                sbPredictions.append(bestPrediction);
+            }
+            else {
+                sbPredictions.append(words[i]);
             }
         }
 
