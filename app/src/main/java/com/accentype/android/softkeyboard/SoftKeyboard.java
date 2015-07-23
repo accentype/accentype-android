@@ -109,7 +109,7 @@ public class SoftKeyboard extends InputMethodService
         mSpecialSeparators = getResources().getString(R.string.special_separators);
         mSharedPreferences = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
-        mLocalModel = ModelFactory.create(ModelVersion.LINEAR_BACKOFF_INTERPOLATION, this);
+        mLocalModel = ModelFactory.create(ModelVersion.LOOKUP, this);
     }
     
     /**
