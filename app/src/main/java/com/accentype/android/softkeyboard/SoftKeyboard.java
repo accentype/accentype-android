@@ -723,21 +723,24 @@ public class SoftKeyboard extends InputMethodService
                 updateCandidates();
             }
             else {
-                CharSequence commitText;
-                if (AndroidEmoji.isEmoji(primaryCode)) {
-                    commitText = AndroidEmoji.ensure(String.valueOf(Character.toChars(primaryCode)), this);
-                }
-                else {
-                    commitText = String.valueOf((char) primaryCode);
-                }
                 commitTyped(getCurrentInputConnection());
-                getCurrentInputConnection().commitText(commitText, 1);
+                commitTextAsIs(primaryCode);
             }
         } else {
-            getCurrentInputConnection().commitText(
-                    String.valueOf((char) primaryCode), 1);
+            commitTextAsIs(primaryCode);
         }
         updateShiftKeyState(getCurrentInputEditorInfo());
+    }
+
+    private void commitTextAsIs(int primaryCode) {
+        CharSequence commitText;
+        if (AndroidEmoji.isEmoji(primaryCode)) {
+            commitText = AndroidEmoji.ensure(String.valueOf(Character.toChars(primaryCode)), this);
+        }
+        else {
+            commitText = String.valueOf((char) primaryCode);
+        }
+        getCurrentInputConnection().commitText(commitText, 1);
     }
 
     private void handleClose() {
