@@ -87,6 +87,7 @@ public class SoftKeyboard extends InputMethodService
     private LatinKeyboard mSymbolsKeyboard;
     private LatinKeyboard mSymbolsShiftedKeyboard;
     private LatinKeyboard mQwertyKeyboard;
+    private LatinKeyboard mEmojiKeyboard;
     
     private LatinKeyboard mCurKeyboard;
 
@@ -127,6 +128,7 @@ public class SoftKeyboard extends InputMethodService
         mQwertyKeyboard = new LatinKeyboard(this, R.xml.qwerty);
         mSymbolsKeyboard = new LatinKeyboard(this, R.xml.symbols);
         mSymbolsShiftedKeyboard = new LatinKeyboard(this, R.xml.symbols_shift);
+        mEmojiKeyboard = new LatinKeyboard(this, R.xml.emoji);
     }
     
     /**
@@ -582,12 +584,15 @@ public class SoftKeyboard extends InputMethodService
         } else if (primaryCode == LatinKeyboardView.KEYCODE_INPUT_METHOD_SWITCH) {
             handleInputMethodSwitch();
             return;
+        } else if (primaryCode == LatinKeyboardView.KEYCODE_EMOJI) {
+            handleEmojiSwitch();
+            return;
         } else if (primaryCode == LatinKeyboardView.KEYCODE_OPTIONS) {
             // Show a menu or somethin'
         } else if (primaryCode == Keyboard.KEYCODE_MODE_CHANGE
                 && mInputView != null) {
             Keyboard current = mInputView.getKeyboard();
-            if (current == mSymbolsKeyboard || current == mSymbolsShiftedKeyboard) {
+            if (current == mSymbolsKeyboard || current == mSymbolsShiftedKeyboard || current == mEmojiKeyboard) {
                 setLatinKeyboard(mQwertyKeyboard);
             } else {
                 setLatinKeyboard(mSymbolsKeyboard);
@@ -676,6 +681,13 @@ public class SoftKeyboard extends InputMethodService
         updateShiftKeyState(getCurrentInputEditorInfo());
     }
 
+    private void handleEmojiSwitch() {
+        if (mInputView == null) {
+            return;
+        }
+        mInputView.setKeyboard(mEmojiKeyboard);
+    }
+
     private void handleShift() {
         if (mInputView == null) {
             return;
@@ -711,9 +723,15 @@ public class SoftKeyboard extends InputMethodService
                 updateCandidates();
             }
             else {
+                CharSequence commitText;
+                if (AndroidEmoji.isEmoji(primaryCode)) {
+                    commitText = AndroidEmoji.ensure(String.valueOf(Character.toChars(primaryCode)), this);
+                }
+                else {
+                    commitText = String.valueOf((char) primaryCode);
+                }
                 commitTyped(getCurrentInputConnection());
-                getCurrentInputConnection().commitText(
-                        String.valueOf((char) primaryCode), 1);
+                getCurrentInputConnection().commitText(commitText, 1);
             }
         } else {
             getCurrentInputConnection().commitText(

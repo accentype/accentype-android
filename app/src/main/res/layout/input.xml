@@ -27,7 +27,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/candidate_background"
-        android:keyBackground="@drawable/btn_keyboard_key_ics"
+        android:keyBackground="@color/candidate_background"
         android:keyTextColor="@android:color/white"
         android:keyTextSize="@dimen/key_font_size"
         android:verticalCorrection="@dimen/vertical_correction"

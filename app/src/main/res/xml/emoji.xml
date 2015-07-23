@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/*
+** Created by lhoang.
+*/
+-->
+
+<Keyboard xmlns:android="http://schemas.android.com/apk/res/android"
+    android:keyWidth="10%p"
+    android:horizontalGap="0px"
+    android:verticalGap="7dp"
+    android:keyHeight="@dimen/key_height"
+    >
+    <Row>
+        <Key android:codes="0x1F601" android:keyLabel="\ud83d\ude01" android:keyEdgeFlags="left"/>
+        <Key android:codes="0x1F602" android:keyLabel="\ud83d\ude02"/>
+        <Key android:codes="0x1F603" android:keyLabel="\ud83d\ude03"/>
+        <Key android:codes="0x1F604" android:keyLabel="\ud83d\ude04"/>
+        <Key android:codes="0x1F605" android:keyLabel="\ud83d\ude05"/>
+        <Key android:codes="0x1F606" android:keyLabel="\ud83d\ude06"/>
+        <Key android:codes="0x1F607" android:keyLabel="\ud83d\ude07"/>
+        <Key android:codes="0x1F608" android:keyLabel="\ud83d\ude08"/>
+        <Key android:codes="0x1F609" android:keyLabel="\ud83d\ude09"/>
+        <Key android:codes="0x1F60A" android:keyLabel="\ud83d\ude0A" android:keyEdgeFlags="right"/>
+    </Row>
+
+    <Row>
+        <Key android:codes="0x1F60B" android:keyLabel="\ud83d\ude0B" android:keyEdgeFlags="left"/>
+        <Key android:codes="0x1F60C" android:keyLabel="\ud83d\ude0C"/>
+        <Key android:codes="0x1F60D" android:keyLabel="\ud83d\ude0D"/>
+        <Key android:codes="0x1F60E" android:keyLabel="\ud83d\ude0E"/>
+        <Key android:codes="0x1F60F" android:keyLabel="\ud83d\ude0F"/>
+        <Key android:codes="0x1F610" android:keyLabel="\ud83d\ude10"/>
+        <Key android:codes="0x1F611" android:keyLabel="\ud83d\ude11"/>
+        <Key android:codes="0x1F612" android:keyLabel="\ud83d\ude12"/>
+        <Key android:codes="0x1F613" android:keyLabel="\ud83d\ude13"/>
+        <Key android:codes="0x1F614" android:keyLabel="\ud83d\ude14" android:keyEdgeFlags="right"/>
+    </Row>
+
+    <Row>
+        <Key android:codes="0x1F615" android:keyLabel="\ud83d\ude15" android:keyEdgeFlags="left"/>
+        <Key android:codes="0x1F616" android:keyLabel="\ud83d\ude16"/>
+        <Key android:codes="0x1F617" android:keyLabel="\ud83d\ude17"/>
+        <Key android:codes="0x1F618" android:keyLabel="\ud83d\ude18"/>
+        <Key android:codes="0x1F619" android:keyLabel="\ud83d\ude19"/>
+        <Key android:codes="0x1F61A" android:keyLabel="\ud83d\ude1A"/>
+        <Key android:codes="0x1F61B" android:keyLabel="\ud83d\ude1B"/>
+        <Key android:codes="0x1F61C" android:keyLabel="\ud83d\ude1C"/>
+        <Key android:codes="-5" android:keyIcon="@drawable/sym_keyboard_delete_holo_dark"
+            android:keyWidth="15%p" android:keyEdgeFlags="right"
+            android:isRepeatable="true" android:horizontalGap="5%p"/>
+    </Row>
+
+    <Row android:rowEdgeFlags="bottom">
+        <Key android:codes="-2" android:keyLabel="ABC" android:keyWidth="10%p"/>
+        <Key android:codes="32" android:keyIcon="@drawable/sym_keyboard_space_holo_dark"
+            android:keyWidth="80%p" android:isRepeatable="true"/>
+        <Key android:codes="-2" android:keyLabel="ABC" android:keyWidth="10%p"/>
+    </Row>
+</Keyboard>
+    
