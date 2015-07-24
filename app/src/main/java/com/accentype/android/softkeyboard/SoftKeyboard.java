@@ -948,6 +948,19 @@ public class SoftKeyboard extends InputMethodService
                             }
                         }
                     }
+                    if (localPrediction != null && predictions.size() >= 2) {
+                        String normalizedPrediction = StringUtil.normalizeStringCase(
+                                predictions.get(1),
+                                new StringBuilder(predictions.get(0))
+                        );
+                        if (normalizedPrediction.equals(predictions.get(1))) {
+                            // if normalized prediction is same as server prediction then remove it from list
+                            predictions.remove(0);
+                        }
+                        else {
+                            predictions.set(0, normalizedPrediction);
+                        }
+                    }
                 }
                 else
                 {

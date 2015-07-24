@@ -39,53 +39,63 @@ public class LinearBackoffInterpolationModel implements BaseModel {
         String[] words = rawPhrase.trim().toLowerCase().split("\\s+");
 
         StringBuilder sbPredictions = new StringBuilder();
-        for (int i = 0; i < words.length; i++) {
-            HashMap<String, Double> accScoreMap = new HashMap<>();
 
-            ComputeAccentScore(words, i, beta3, model3, 3, accScoreMap);
-            ComputeAccentScore(words, i, beta2, model2, 2, accScoreMap);
-            ComputeAccentScore(words, i, beta1, model1, 1, accScoreMap);
+        // for single-word query, take most likely
+        if (words.length == 1) {
+            HashMap<String, Short> accentsCountMap = model1.get(words[0]);
+            if (accentsCountMap == null) {
+                return null;
+            }
+            Short max = -1;
+            String bestGuess = null;
+            for (String v : accentsCountMap.keySet()) {
+                if (max <= accentsCountMap.get(v)) {
+                    max = accentsCountMap.get(v);
+                    bestGuess = v;
+                }
+            }
+            if (bestGuess == null) {
+                return null;
+            }
+            sbPredictions.append(bestGuess);
+            return StringUtil.normalizeStringCase(rawPhrase, sbPredictions);
+        }
+        else {
+            boolean hasPredictions = false;
+            for (int i = 0; i < words.length; i++) {
+                HashMap<String, Double> accScoreMap = new HashMap<>();
 
-            String bestPrediction = null;
-            if (accScoreMap != null && accScoreMap.size() > 0) {
-                double bestScore = -1;
-                for (String accentPhrase : accScoreMap.keySet()) {
-                    double score = accScoreMap.get(accentPhrase);
-                    if (bestScore <= score) {
-                        bestPrediction = accentPhrase;
-                        bestScore = score;
+                // only look at 2-gram & 3-gram
+                ComputeAccentScore(words, i, beta3, model3, 3, accScoreMap);
+                ComputeAccentScore(words, i, beta2, model2, 2, accScoreMap);
+
+                String bestPrediction = null;
+                if (accScoreMap.size() > 0) {
+                    double bestScore = -1;
+                    for (String accentPhrase : accScoreMap.keySet()) {
+                        double score = accScoreMap.get(accentPhrase);
+                        if (bestScore <= score) {
+                            bestPrediction = accentPhrase;
+                            bestScore = score;
+                        }
+                    }
+                }
+                if (bestPrediction != null) {
+                    hasPredictions = true;
+                    sbPredictions.append(bestPrediction);
+                }
+                else {
+                    for (int c = 0; c < words[i].length(); c++) {
+                        sbPredictions.append(".");
                     }
                 }
             }
-            if (bestPrediction != null) {
-                sbPredictions.append(bestPrediction);
+            if (!hasPredictions) {
+                return null;
             }
-            else {
-                sbPredictions.append(words[i]);
-            }
+            // don't normalize yet, wait until incorporating with the full prediction from server
+            return sbPredictions.toString();
         }
-
-        if (sbPredictions.length() == 0) {
-            return null;
-        }
-        // normalize raw string with accented string
-        StringBuilder sbReturn = new StringBuilder(rawPhrase);
-        int j = 0;
-        for (int i = 0; i < sbReturn.length() && j < sbPredictions.length(); i++) {
-            char c = sbReturn.charAt(i);
-            if (Character.isWhitespace(c)) {
-                continue;
-            }
-            if (Character.isUpperCase(c)) {
-                sbReturn.setCharAt(i, Character.toUpperCase(sbPredictions.charAt(j)));
-            }
-            else {
-                sbReturn.setCharAt(i, sbPredictions.charAt(j));
-            }
-            j++;
-        }
-
-        return sbReturn.toString();
     }
 
     @Override public void learn(String rawPhrase, String accentPhrase) {
@@ -96,8 +106,10 @@ public class LinearBackoffInterpolationModel implements BaseModel {
         String[] rawWords = rawPhrase.trim().toLowerCase().split("\\s+");
         String[] accentWords = accentPhrase.trim().toLowerCase().split("\\s+");
 
-        for (int i = 0; i < rawWords.length; i++) {
-            model1.add(rawWords[i], accentWords[i]);
+        // for single word query, simply do look up
+        if (rawWords.length == 1) {
+            model1.add(rawWords[0], accentWords[0]);
+            return;
         }
 
         for (int i = 0; i < rawWords.length - 1; i++) {
