@@ -341,7 +341,12 @@ public class SoftKeyboard extends InputMethodService
             setSuggestions(stringList, null, true, true);
         }
     }
-    
+
+    @Override public void onDestroy() {
+        super.onDestroy();
+        mLocalModel.dispose();
+    }
+
     /**
      * This translates incoming hard key events in to edit operations on an
      * InputConnection.  It is only needed when using the

@@ -131,6 +131,8 @@ public class LookupModel implements BaseModel {
         return ModelVersion.LOOKUP;
     }
 
+    @Override public void dispose() {}
+
     private class LoadFromFile extends AsyncTask<Void, Void, HashMap<Integer, HashMap<String, LocalModelItemData>>> {
         private Context mContext;
 

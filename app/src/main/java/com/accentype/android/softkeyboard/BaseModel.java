@@ -18,6 +18,11 @@ interface BaseModel {
     void learn(String rawPhrase, String accentPhrase);
 
     /**
+     * Called when the model can safely dispose or flush any data to disk as needed.
+     */
+    void dispose();
+
+    /**
      * Gets the version number for this model type.
      */
     int version();
