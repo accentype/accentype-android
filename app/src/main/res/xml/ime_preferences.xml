@@ -16,4 +16,11 @@
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
         android:title="@string/settings_name">
+     <CheckBoxPreference android:title="Toggle Vibration"
+         android:defaultValue="true"
+         android:summary="If checked will turn on vibration."
+         android:key="toggleVibrate" />
+     <CheckBoxPreference android:title="Toggle Cancel Key"
+         android:summary="If checked will display the cancel key which can be used to hide the keyboard."
+         android:key="toggleCancelKey" />
 </PreferenceScreen>
