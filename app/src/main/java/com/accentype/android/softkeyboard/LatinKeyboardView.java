@@ -17,10 +17,15 @@
 package com.accentype.android.softkeyboard;
 
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.Keyboard.Key;
 import android.inputmethodservice.KeyboardView;
 import android.util.AttributeSet;
+
+import java.util.List;
 
 public class LatinKeyboardView extends KeyboardView {
 
@@ -30,12 +35,17 @@ public class LatinKeyboardView extends KeyboardView {
     static final int KEYCODE_INPUT_METHOD_SWITCH = -102;
     static final int KEYCODE_EMOJI = -103;
 
+    static Paint foregroundPaint = new Paint();
+    static final int spaceKeyMargin = 10;
+
     public LatinKeyboardView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        foregroundPaint.setColor(Color.WHITE);
     }
 
     public LatinKeyboardView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        foregroundPaint.setColor(Color.WHITE);
     }
 
     @Override
@@ -48,6 +58,24 @@ public class LatinKeyboardView extends KeyboardView {
             return true;
         } else {
             return super.onLongPress(key);
+        }
+    }
+
+    @Override
+    public void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+
+        List<Key> keys = getKeyboard().getKeys();
+        for (Key key : keys) {
+            if (key.codes[0] == 32) {
+                canvas.drawRect(
+                    key.x + spaceKeyMargin,
+                    key.y + key.height / 2,
+                    key.x + key.width - spaceKeyMargin,
+                    key.y + key.height - key.height / 4,
+                    foregroundPaint);
+                return;
+            }
         }
     }
 }

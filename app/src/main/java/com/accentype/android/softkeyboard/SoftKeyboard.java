@@ -568,7 +568,9 @@ public class SoftKeyboard extends InputMethodService
         if (isWordSeparator(primaryCode)) {
             if (isSpecialSeparator(primaryCode)) {
                 handleCharacter(primaryCode, keyCodes);
-                if (mInputView.getKeyboard() != mQwertyKeyboard) {
+                Keyboard currentKeyboard = mInputView.getKeyboard();
+                if (currentKeyboard != mEmojiKeyboard &&
+                    currentKeyboard != mQwertyKeyboard) {
                     setLatinKeyboard(mQwertyKeyboard);
                 }
             }
