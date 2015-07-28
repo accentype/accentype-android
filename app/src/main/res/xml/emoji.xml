@@ -53,7 +53,7 @@
 
     <Row android:rowEdgeFlags="bottom">
         <Key android:codes="-2" android:keyLabel="ABC" android:keyWidth="10%p"/>
-        <Key android:codes="32" android:keyIcon="@drawable/sym_keyboard_space_holo_dark"
+        <Key android:codes="32"
             android:keyWidth="80%p" android:isRepeatable="true"/>
         <Key android:codes="-2" android:keyLabel="ABC" android:keyWidth="10%p"/>
     </Row>
