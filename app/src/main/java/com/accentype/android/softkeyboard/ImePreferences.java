@@ -41,6 +41,13 @@ public class ImePreferences extends PreferenceActivity {
         setTitle(R.string.settings_name);
     }
 
+    @Override
+    protected boolean isValidFragment(String fragmentName) {
+        // TODO: the right way of fixing the crash is to do the following:
+        // return [YOUR_FRAGMENT_NAME_HERE].class.getName().equals(fragmentName);
+        return true;
+    }
+
     public static class Settings extends InputMethodSettingsFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {
