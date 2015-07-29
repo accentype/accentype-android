@@ -296,7 +296,16 @@ public class CandidateView extends View {
         scrollTo(sx, getScrollY());
         invalidate();
     }
-    
+
+    /**
+     * Update current suggestions and word choices if necessary.
+     * @param suggestions The list of candidate suggestions to show.
+     * @param wordChoices The 2-d array of suggestions for each word in the composing text.
+     *                    This is useful for second-level suggestions shown on fling.
+     * @param composing The current composing text.
+     * @param completions Whether the current text editor has auto-completion for the current text.
+     * @param typedWordValid Whether the typed word is valid.
+     */
     public void setSuggestions(List<String> suggestions, String[][] wordChoices, String composing, boolean completions,
             boolean typedWordValid) {
         clear();

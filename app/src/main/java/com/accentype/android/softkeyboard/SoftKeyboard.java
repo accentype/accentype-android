@@ -640,23 +640,27 @@ public class SoftKeyboard extends InputMethodService
     private void updateCandidates() {
         if (!mCompletionOn) {
             if (mComposing.length() > 0) {
-                ArrayList<String> list = new ArrayList<>();
+                ArrayList<String> suggestions = new ArrayList<>();
                 if (mPredictions == null || mPredictions.size() <= 0) {
-                    list.add(mComposing.toString());
+                    suggestions.add(mComposing.toString());
                 }
                 else
                 {
                     for (int i = 0; i < mPredictions.size(); i++) {
-                        list.add(mPredictions.get(i));
+                        suggestions.add(mPredictions.get(i));
                     }
                 }
-                setSuggestions(list, mWordChoices, true, true);
+                setSuggestions(suggestions, mWordChoices, true, true);
             } else {
                 setSuggestions(null, null, false, false);
             }
         }
     }
 
+    /**
+     * Update local predictions with server results or resets if keyboard is in a state
+     * that does not need server predictions.
+     */
     private void updatePredictions() {
         String composing = mComposing.toString();
         if (mPredictionOn && getLanguageCode() == LatinKeyboard.LANGUAGE_VN && composing.trim().length() > 0) {
@@ -669,8 +673,20 @@ public class SoftKeyboard extends InputMethodService
         }
     }
 
-    public void setSuggestions(List<String> suggestions, String[][] wordChoices, boolean completions,
-            boolean typedWordValid) {
+    /**
+     * Update the candidate view with current suggestions and word choices if necessary.
+     * @param suggestions The list of candidate suggestions to show.
+     * @param wordChoices The 2-d array of suggestions for each word in the composing text.
+     *                    This is useful for second-level suggestions shown on fling.
+     * @param completions Whether the current text editor has auto-completion for the current text.
+     * @param typedWordValid Whether the typed word is valid.
+     */
+    public void setSuggestions(
+            List<String> suggestions,
+            String[][] wordChoices,
+            boolean completions,
+            boolean typedWordValid
+    ) {
         if (suggestions != null && suggestions.size() > 0) {
             setCandidatesViewShown(true);
         } else if (isExtractViewShown()) {
