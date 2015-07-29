@@ -77,7 +77,7 @@
         -->
         <Key android:codes="-101" android:keyLabel="VN"
                 android:keyWidth="10%p"/>
-        <Key android:codes="32"
+        <Key android:codes="32" android:keyLabel=" "
                 android:keyWidth="20%p" android:isRepeatable="true"/>
         <Key android:codes="46" android:keyLabel="."
                 android:keyWidth="10%p"/>
