@@ -100,7 +100,7 @@ public class SoftKeyboard extends InputMethodService
     private String mWordSeparators;
     private String mSpecialSeparators;
 
-    private AtomicBoolean mGotPrediction = new AtomicBoolean(false);
+    private AtomicBoolean mGotServerPrediction = new AtomicBoolean(false);
     private Semaphore mPredictionSemaphore = new Semaphore(1);
 
     private AtomicInteger mRequestId = new AtomicInteger();
@@ -193,7 +193,7 @@ public class SoftKeyboard extends InputMethodService
         // Reset our state.  We want to do this even if restarting, because
         // the underlying state of the text editor could have changed in any way.
         mComposing.setLength(0);
-        updatePredictions();
+        updateOrResetServerPredictions();
         updateCandidates();
 
         if (!restarting) {
@@ -284,7 +284,7 @@ public class SoftKeyboard extends InputMethodService
 
         // Clear current composing text and candidates.
         mComposing.setLength(0);
-        updatePredictions();
+        updateOrResetServerPredictions();
         updateCandidates();
 
         // We only hide the candidates window when finishing input on
@@ -320,7 +320,7 @@ public class SoftKeyboard extends InputMethodService
         if (mComposing.length() > 0 && (newSelStart != candidatesEnd
                 || newSelEnd != candidatesEnd)) {
             mComposing.setLength(0);
-            updatePredictions();
+            updateOrResetServerPredictions();
             updateCandidates();
             InputConnection ic = getCurrentInputConnection();
             if (ic != null) {
@@ -495,7 +495,7 @@ public class SoftKeyboard extends InputMethodService
                 inputConnection.commitText(mComposing, mComposing.length());
             }
             mComposing.setLength(0);
-            updatePredictions();
+            updateOrResetServerPredictions();
             updateCandidates();
         }
     }
@@ -661,7 +661,7 @@ public class SoftKeyboard extends InputMethodService
      * Update local predictions with server results or resets if keyboard is in a state
      * that does not need server predictions.
      */
-    private void updatePredictions() {
+    private void updateOrResetServerPredictions() {
         String composing = mComposing.toString();
         if (mPredictionOn && getLanguageCode() == LatinKeyboard.LANGUAGE_VN && composing.trim().length() > 0) {
             new Predictor().execute(composing);
@@ -669,7 +669,7 @@ public class SoftKeyboard extends InputMethodService
         else {
             mPredictions = EMPTY_LIST;
             mWordChoices = null;
-            mGotPrediction.set(Boolean.FALSE);
+            mGotServerPrediction.set(Boolean.FALSE);
         }
     }
 
@@ -701,14 +701,14 @@ public class SoftKeyboard extends InputMethodService
         final int length = mComposing.length();
         if (length > 1) {
             mComposing.delete(length - 1, length);
-            updatePredictions();
-            if (!mGotPrediction.get()) {
+            updateOrResetServerPredictions();
+            if (!mGotServerPrediction.get()) {
                 getCurrentInputConnection().setComposingText(mComposing, 1);
             }
             updateCandidates();
         } else if (length > 0) {
             mComposing.setLength(0);
-            updatePredictions();
+            updateOrResetServerPredictions();
             getCurrentInputConnection().commitText("", 0);
             updateCandidates();
         } else {
@@ -754,8 +754,8 @@ public class SoftKeyboard extends InputMethodService
         if (mPredictionOn && getLanguageCode() == LatinKeyboard.LANGUAGE_VN) {
             if (isAlphabet(primaryCode) || isSpecialSeparator(primaryCode)) {
                 mComposing.append((char) primaryCode);
-                updatePredictions();
-                if (!mGotPrediction.get()) {
+                updateOrResetServerPredictions();
+                if (!mGotServerPrediction.get()) {
                     getCurrentInputConnection().setComposingText(mComposing, 1);
                 }
                 updateCandidates();
@@ -814,7 +814,9 @@ public class SoftKeyboard extends InputMethodService
         }
 
         if (languageCode == LatinKeyboard.LANGUAGE_VN) {
-            updatePredictions();
+            // reset server predictions to prepare since we are now in language mode
+            // that requires server model
+            updateOrResetServerPredictions();
         } else {
             commitTyped(getCurrentInputConnection());
         }
@@ -1037,7 +1039,7 @@ public class SoftKeyboard extends InputMethodService
                 mWordChoices = predictionData.WordChoices;
                 if (mPredictions != null && mPredictions.size() > 0) {
                     getCurrentInputConnection().setComposingText(mPredictions.get(0), 1);
-                    mGotPrediction.set(Boolean.TRUE);
+                    mGotServerPrediction.set(Boolean.TRUE);
                     mPredictionSemaphore.release();
                     updateCandidates();
                 }
