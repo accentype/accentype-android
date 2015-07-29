@@ -40,10 +40,12 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Example of writing an input method for a soft keyboard.  This code is
@@ -101,7 +103,10 @@ public class SoftKeyboard extends InputMethodService
     private AtomicBoolean mGotPrediction = new AtomicBoolean(false);
     private Semaphore mPredictionSemaphore = new Semaphore(1);
 
-    private static final List<String> EMPTY_LIST = new ArrayList<String>();
+    private AtomicInteger mRequestId = new AtomicInteger();
+    private static final int mMaxRequestId = 65535;
+
+    private static final List<String> EMPTY_LIST = new ArrayList<>();
     /**
      * Main initialization of the input method component.  Be sure to call
      * to super class.
@@ -1026,17 +1031,25 @@ public class SoftKeyboard extends InputMethodService
         }
 
         private String[][] predict(StringBuilder query) {
-            String SERVERIP = "accentype.cloudapp.net";
+            String SERVERIP = "accentypeheader.cloudapp.net";
 //        String SERVERIP = "10.0.3.2";
             int SERVERPORT = 10100;
 
+            mRequestId.compareAndSet(mMaxRequestId, 0);
+            int requestId = mRequestId.incrementAndGet();
             try {
                 InetAddress serverAddr = InetAddress.getByName(SERVERIP);
                 DatagramSocket socket = new DatagramSocket();
 
                 socket.setSoTimeout(500);
 
-                byte[] buf = query.toString().getBytes("US-ASCII");
+                byte[] header = shortToByteArray(requestId);
+                byte[] content = query.toString().getBytes("US-ASCII");
+                ByteBuffer buffer = ByteBuffer.allocate(header.length + content.length);
+                buffer.put(header);
+                buffer.put(content);
+                byte[] buf = buffer.array();
+
                 DatagramPacket packet = new DatagramPacket(buf, buf.length, serverAddr, SERVERPORT);
                 socket.send(packet);
 
@@ -1044,7 +1057,13 @@ public class SoftKeyboard extends InputMethodService
                 DatagramPacket replyPacket = new DatagramPacket(replyBuf, replyBuf.length);
                 socket.receive(replyPacket);
 
-                int index = 0;
+                int responseId = byteArrayToShort(replyBuf);
+                if (responseId != mRequestId.get()) {
+                    // only take the latest prediction
+                    return null;
+                }
+
+                int index = 2;
                 byte numWords = replyBuf[index++];
 
                 String[][] wordChoices = new String[numWords][];
@@ -1065,6 +1084,17 @@ public class SoftKeyboard extends InputMethodService
                 // TODO: Handle exception
             }
             return null;
+        }
+
+        private byte[] shortToByteArray(int value) {
+            return new byte[] {
+                    (byte)(value >> 8),
+                    (byte)value
+            };
+        }
+
+        private int byteArrayToShort(byte[] value) {
+            return ((value[0] & 0xFF) << 8) | (value[1] & 0xFF);
         }
     }
 
