@@ -25,6 +25,7 @@ import android.inputmethodservice.KeyboardView;
 import android.os.AsyncTask;
 import android.os.IBinder;
 import android.os.Vibrator;
+import android.preference.PreferenceManager;
 import android.text.InputType;
 import android.text.method.MetaKeyKeyListener;
 import android.view.KeyCharacterMap;
@@ -66,7 +67,8 @@ public class SoftKeyboard extends InputMethodService
      */
     static final boolean PROCESS_HARD_KEYS = true;
 
-    private SharedPreferences mSharedPreferences;
+    public SharedPreferences mSharedPreferences;
+    public SharedPreferences mSettings;
     private InputMethodManager mInputMethodManager;
 
     private LatinKeyboardView mInputView;
@@ -101,6 +103,12 @@ public class SoftKeyboard extends InputMethodService
     private AtomicBoolean mGotPrediction = new AtomicBoolean(false);
     private Semaphore mPredictionSemaphore = new Semaphore(1);
 
+    private static final String checkBoxKeyVibration = "toggleVibrate";
+    private static final String checkBoxKeyCancelKey = "toggleCancelKey";
+
+    private static final boolean defaultVibration = true;
+    private static final boolean defaultCancelKey = false;
+
     private static final List<String> EMPTY_LIST = new ArrayList<String>();
     /**
      * Main initialization of the input method component.  Be sure to call
@@ -113,6 +121,8 @@ public class SoftKeyboard extends InputMethodService
         mWordSeparators = getResources().getString(R.string.word_separators);
         mSpecialSeparators = getResources().getString(R.string.special_separators);
         mSharedPreferences = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        // SharedPreferences for settings
+        mSettings = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
         mLocalModel = ModelFactory.create(ModelVersion.LINEAR_BACKOFF_INTERPOLATION, this);
     }
@@ -151,7 +161,8 @@ public class SoftKeyboard extends InputMethodService
     }
 
     private void setLatinKeyboard(LatinKeyboard nextKeyboard) {
-        nextKeyboard.setCancelKeyVisibility(false);
+        boolean shouldShowCancelKey = mSettings.getBoolean(checkBoxKeyCancelKey, defaultCancelKey);
+        nextKeyboard.setCancelKeyVisibility(shouldShowCancelKey);
 
         if (mSharedPreferences != null) {
             int languageCode = mSharedPreferences.getInt(
@@ -892,7 +903,9 @@ public class SoftKeyboard extends InputMethodService
     }
 
     public void onPress(int primaryCode) {
-        mVibrator.vibrate(20);
+        if (mSettings.getBoolean(checkBoxKeyVibration, defaultVibration)) {
+            mVibrator.vibrate(20);
+        }
         if (primaryCode != 32 && primaryCode != -5) {
             mInputView.setPreviewEnabled(true);
         }

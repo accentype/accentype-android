@@ -17,14 +17,24 @@
 package com.accentype.android.softkeyboard;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceManager;
+
 import com.android.inputmethodcommon.InputMethodSettingsFragment;
 
 /**
  * Displays the IME preferences inside the input method setting.
  */
 public class ImePreferences extends PreferenceActivity {
+    private SharedPreferences settings;
+    private static final String keyVibration = "toggleVibrate";
+    private static final String cancelKey = "toggleCancelKey";
+
+    private static final boolean defaultVibration = true;
+    private static final boolean defaultCancelKey = false;
+
     @Override
     public Intent getIntent() {
         final Intent modIntent = new Intent(super.getIntent());
@@ -39,6 +49,23 @@ public class ImePreferences extends PreferenceActivity {
 
         // We overwrite the title of the activity, as the default one is "Voice Search".
         setTitle(R.string.settings_name);
+
+        settings = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        SharedPreferences.Editor editor = settings.edit();
+
+        boolean vibrationValue = settings.getBoolean(keyVibration, defaultVibration);
+        boolean cancelKeyValue = settings.getBoolean(cancelKey, defaultCancelKey);
+
+        editor.putBoolean(keyVibration, vibrationValue);
+        editor.putBoolean(cancelKey, cancelKeyValue);
+
+        editor.commit();
     }
 
     @Override

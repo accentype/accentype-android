@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2011 Google Inc.
+<?xml version="1.0" encoding="utf-8"?><!-- Copyright (C) 2011 Google Inc.
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -15,12 +14,14 @@
 -->
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-        android:title="@string/settings_name">
-     <CheckBoxPreference android:title="Toggle Vibration"
-         android:defaultValue="true"
-         android:summary="If checked will turn on vibration."
-         android:key="toggleVibrate" />
-     <CheckBoxPreference android:title="Toggle Cancel Key"
-         android:summary="If checked will display the cancel key which can be used to hide the keyboard."
-         android:key="toggleCancelKey" />
+    android:title="@string/settings_name">
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="toggleVibrate"
+        android:summary="If checked will turn on vibration."
+        android:title="Enable Vibration when Typing" />
+    <CheckBoxPreference
+        android:key="toggleCancelKey"
+        android:summary="If checked will display the cancel key which can be used to hide the keyboard."
+        android:title="Show Cancel Key on Keyboard" />
 </PreferenceScreen>
