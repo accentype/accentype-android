@@ -32,4 +32,6 @@
         android:keyTextSize="@dimen/key_font_size"
         android:verticalCorrection="@dimen/vertical_correction"
         android:shadowRadius="0.0"
+        android:keyPreviewLayout="@layout/white_preview"
+        android:keyPreviewHeight="@dimen/key_preview_window_size"
         />

@@ -24,6 +24,7 @@
     <dimen name="vertical_correction">0dp</dimen>
     <dimen name="key_height">44dip</dimen>
     <dimen name="key_font_size">24sp</dimen>
+    <dimen name="key_preview_window_size">60sp</dimen>
     <dimen name="candidate_font_height">18sp</dimen>
     <dimen name="candidate_vertical_padding">28sp</dimen>
 </resources>
