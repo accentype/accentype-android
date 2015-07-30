@@ -536,7 +536,7 @@ public class CandidateView extends View {
         protected HashMap<String, String[]> doInBackground(Void... params) {
             try
             {
-                InputStream accStream = getResources().openRawResource(R.raw.dictionary);
+                InputStream accStream = getResources().openRawResource(R.raw.dict_vn);
                 BufferedReader accReader = new BufferedReader(new InputStreamReader(accStream, "UTF-8"));
                 HashMap<String, String[]> dictionary = new HashMap<>();
                 String line;

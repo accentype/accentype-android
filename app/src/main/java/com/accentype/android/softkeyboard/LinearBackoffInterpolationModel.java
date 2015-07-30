@@ -76,7 +76,7 @@ public class LinearBackoffInterpolationModel implements BaseModel {
                 return null;
             }
             sbPredictions.append(bestGuess);
-            return StringUtil.normalizeStringCase(rawPhrase, sbPredictions);
+            return StringUtil.normalizeStringCaseDottedTruncate(rawPhrase, sbPredictions);
         }
         else {
             boolean hasPredictions = false;
