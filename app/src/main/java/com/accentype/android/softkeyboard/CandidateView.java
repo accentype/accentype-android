@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -447,6 +448,10 @@ public class CandidateView extends View {
         internalDraw(null);
         invalidate();
         requestLayout();
+
+        LogUtil.Log(this.getClass().getName(),
+            MessageFormat.format("secondary suggestion word index {0} picked", index)
+        );
     }
 
     private void removeHighlight() {
@@ -546,8 +551,9 @@ public class CandidateView extends View {
                 }
                 return dictionary;
             }
-            catch (UnsupportedEncodingException ex) { }
-            catch (IOException ex) { }
+            catch (Exception ex) {
+                LogUtil.Log(this.getClass().getName(), "Error in async vn dict load: " + ex.getMessage());
+            }
 
             return null;
         }

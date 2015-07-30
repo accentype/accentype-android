@@ -3,6 +3,7 @@ package com.accentype.android.softkeyboard;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Debug;
+import android.util.Log;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -10,6 +11,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.text.MessageFormat;
 import java.util.HashMap;
 
 /**
@@ -136,8 +138,14 @@ public class LinearBackoffInterpolationModel implements BaseModel {
 
                 mLocalModelBinaryWriter.writeInt(mPhraseHistory.get(s));
             }
+
+            LogUtil.Log(this.getClass().getName(),
+                    MessageFormat.format("Serialized model with {0} unique phrases", mPhraseHistory.size())
+            );
         }
-        catch (IOException ex) { }
+        catch (IOException ex) {
+            LogUtil.Log(this.getClass().getName(), "Error in async server predict: " + ex.getMessage());
+        }
     }
 
     @Override public int version() {
@@ -370,15 +378,9 @@ public class LinearBackoffInterpolationModel implements BaseModel {
                     binaryReader.close();
                 }
             }
-            catch (UnsupportedEncodingException ex) { }
-            catch (IOException ex)
+            catch (Exception ex)
             {
-                String s = ex.toString();
-                if (s.length() > 0) {
-                    int x = 10;
-                    x++;
-                    s += x;
-                }
+                LogUtil.Log(this.getClass().getName(), "Error in async local model load: " + ex.getMessage());
             }
 
             return localModel;

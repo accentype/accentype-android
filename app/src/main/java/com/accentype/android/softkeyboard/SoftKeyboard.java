@@ -28,6 +28,7 @@ import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.text.InputType;
 import android.text.method.MetaKeyKeyListener;
+import android.util.Log;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.View;
@@ -47,6 +48,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 import java.nio.ByteBuffer;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
@@ -1151,6 +1153,14 @@ public class SoftKeyboard extends InputMethodService
                 int responseId = byteArrayToShort(replyBuf);
                 if (responseId != mRequestId.get()) {
                     // only take the latest prediction
+                    LogUtil.Log(this.getClass().getName(),
+                            MessageFormat.format(
+                                    "response id {0} doesn't match request id {1}, query: {2}",
+                                    responseId,
+                                    requestId,
+                                    query.toString()
+                            )
+                    );
                     return null;
                 }
 
@@ -1172,7 +1182,7 @@ public class SoftKeyboard extends InputMethodService
                 return wordChoices;
             }
             catch (Exception e) {
-                // TODO: Handle exception
+                LogUtil.Log(this.getClass().getName(), "Error in async server predict: " + e.getMessage());
             }
             return null;
         }
