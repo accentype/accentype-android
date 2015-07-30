@@ -37,14 +37,21 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Example of writing an input method for a soft keyboard.  This code is
@@ -79,6 +86,7 @@ public class SoftKeyboard extends InputMethodService
     private BaseModel mLocalModel;
     private List<String> mPredictions;
     private String[][] mWordChoices;
+    private AutoCompleteTrie mEnglishDictionary = new AutoCompleteTrie();
     private boolean mPredictionOn;
     private boolean mCompletionOn;
     private int mLastDisplayWidth;
@@ -100,16 +108,19 @@ public class SoftKeyboard extends InputMethodService
     private String mWordSeparators;
     private String mSpecialSeparators;
 
-    private AtomicBoolean mGotPrediction = new AtomicBoolean(false);
+    private AtomicBoolean mGotServerPrediction = new AtomicBoolean(false);
     private Semaphore mPredictionSemaphore = new Semaphore(1);
 
+    private AtomicInteger mRequestId = new AtomicInteger();
+    private static final int mMaxRequestId = 65535;
+
+    private static final List<String> EMPTY_LIST = new ArrayList<>();
     private static final String checkBoxKeyVibration = "toggleVibrate";
     private static final String checkBoxKeyCancelKey = "toggleCancelKey";
 
     private static final boolean defaultVibration = true;
     private static final boolean defaultCancelKey = false;
-
-    private static final List<String> EMPTY_LIST = new ArrayList<String>();
+    
     /**
      * Main initialization of the input method component.  Be sure to call
      * to super class.
@@ -125,6 +136,7 @@ public class SoftKeyboard extends InputMethodService
         mSettings = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
         mLocalModel = ModelFactory.create(ModelVersion.LINEAR_BACKOFF_INTERPOLATION, this);
+        new EnglishDictionaryLoader().execute();
     }
 
     /**
@@ -199,7 +211,7 @@ public class SoftKeyboard extends InputMethodService
         // Reset our state.  We want to do this even if restarting, because
         // the underlying state of the text editor could have changed in any way.
         mComposing.setLength(0);
-        updatePredictions();
+        updateOrResetServerPredictions();
         updateCandidates();
 
         if (!restarting) {
@@ -290,7 +302,7 @@ public class SoftKeyboard extends InputMethodService
 
         // Clear current composing text and candidates.
         mComposing.setLength(0);
-        updatePredictions();
+        updateOrResetServerPredictions();
         updateCandidates();
 
         // We only hide the candidates window when finishing input on
@@ -326,7 +338,7 @@ public class SoftKeyboard extends InputMethodService
         if (mComposing.length() > 0 && (newSelStart != candidatesEnd
                 || newSelEnd != candidatesEnd)) {
             mComposing.setLength(0);
-            updatePredictions();
+            updateOrResetServerPredictions();
             updateCandidates();
             InputConnection ic = getCurrentInputConnection();
             if (ic != null) {
@@ -501,7 +513,7 @@ public class SoftKeyboard extends InputMethodService
                 inputConnection.commitText(mComposing, mComposing.length());
             }
             mComposing.setLength(0);
-            updatePredictions();
+            updateOrResetServerPredictions();
             updateCandidates();
         }
     }
@@ -646,24 +658,28 @@ public class SoftKeyboard extends InputMethodService
     private void updateCandidates() {
         if (!mCompletionOn) {
             if (mComposing.length() > 0) {
-                ArrayList<String> list = new ArrayList<>();
+                ArrayList<String> suggestions = new ArrayList<>();
                 if (mPredictions == null || mPredictions.size() <= 0) {
-                    list.add(mComposing.toString());
+                    suggestions.add(mComposing.toString());
                 }
                 else
                 {
                     for (int i = 0; i < mPredictions.size(); i++) {
-                        list.add(mPredictions.get(i));
+                        suggestions.add(mPredictions.get(i));
                     }
                 }
-                setSuggestions(list, mWordChoices, true, true);
+                setSuggestions(suggestions, mWordChoices, true, true);
             } else {
                 setSuggestions(null, null, false, false);
             }
         }
     }
 
-    private void updatePredictions() {
+    /**
+     * Update local predictions with server results or resets if keyboard is in a state
+     * that does not need server predictions.
+     */
+    private void updateOrResetServerPredictions() {
         String composing = mComposing.toString();
         if (mPredictionOn && getLanguageCode() == LatinKeyboard.LANGUAGE_VN && composing.trim().length() > 0) {
             new Predictor().execute(composing);
@@ -671,12 +687,56 @@ public class SoftKeyboard extends InputMethodService
         else {
             mPredictions = EMPTY_LIST;
             mWordChoices = null;
-            mGotPrediction.set(Boolean.FALSE);
+            mGotServerPrediction.set(Boolean.FALSE);
         }
     }
 
-    public void setSuggestions(List<String> suggestions, String[][] wordChoices, boolean completions,
-            boolean typedWordValid) {
+    /**
+     * Update internal prediction values & candidate suggestions for VN language.
+     */
+    private void updatePredictionsVN() {
+        updateOrResetServerPredictions();
+        if (!mGotServerPrediction.get()) {
+            getCurrentInputConnection().setComposingText(mComposing, 1);
+        }
+        updateCandidates();
+    }
+
+    /**
+     * Update internal prediction values & candidate suggestions for EN language.
+     * EN predictions are just auto-completions so this method directly updates
+     * candidate suggestions in the candidate view.
+     */
+    private void updatePredictionsEN() {
+        getCurrentInputConnection().setComposingText(mComposing, 1);
+        String query = mComposing.toString().toLowerCase();
+        List<String> suggestions = (List<String>)mEnglishDictionary.autoComplete(query);
+        for (int i = 0; i < suggestions.size(); i++) {
+            suggestions.set(
+                    i,
+                    StringUtil.normalizeWordCasePreserve(
+                            mComposing.toString(),
+                            suggestions.get(i)
+                    )
+            );
+        }
+        setSuggestions(suggestions, null, true, true);
+    }
+
+    /**
+     * Update the candidate view with current suggestions and word choices if necessary.
+     * @param suggestions The list of candidate suggestions to show.
+     * @param wordChoices The 2-d array of suggestions for each word in the composing text.
+     *                    This is useful for second-level suggestions shown on fling.
+     * @param completions Whether the current text editor has auto-completion for the current text.
+     * @param typedWordValid Whether the typed word is valid.
+     */
+    public void setSuggestions(
+            List<String> suggestions,
+            String[][] wordChoices,
+            boolean completions,
+            boolean typedWordValid
+    ) {
         if (suggestions != null && suggestions.size() > 0) {
             setCandidatesViewShown(true);
         } else if (isExtractViewShown()) {
@@ -691,14 +751,23 @@ public class SoftKeyboard extends InputMethodService
         final int length = mComposing.length();
         if (length > 1) {
             mComposing.delete(length - 1, length);
-            updatePredictions();
-            if (!mGotPrediction.get()) {
-                getCurrentInputConnection().setComposingText(mComposing, 1);
+            switch (getLanguageCode()) {
+                case LatinKeyboard.LANGUAGE_VN:
+                {
+                    updatePredictionsVN();
+                    break;
+                }
+                case LatinKeyboard.LANGUAGE_EN:
+                {
+                    updatePredictionsEN();
+                    break;
+                }
             }
-            updateCandidates();
         } else if (length > 0) {
             mComposing.setLength(0);
-            updatePredictions();
+            // this clears internal prediction values so we can
+            // call it regardless of the current language mode
+            updateOrResetServerPredictions();
             getCurrentInputConnection().commitText("", 0);
             updateCandidates();
         } else {
@@ -741,18 +810,30 @@ public class SoftKeyboard extends InputMethodService
                 primaryCode = Character.toUpperCase(primaryCode);
             }
         }
-        if (mPredictionOn && getLanguageCode() == LatinKeyboard.LANGUAGE_VN) {
-            if (isAlphabet(primaryCode) || isSpecialSeparator(primaryCode)) {
-                mComposing.append((char) primaryCode);
-                updatePredictions();
-                if (!mGotPrediction.get()) {
-                    getCurrentInputConnection().setComposingText(mComposing, 1);
+        if (mPredictionOn) {
+            switch (getLanguageCode()) {
+                case LatinKeyboard.LANGUAGE_VN:
+                {
+                    if (isAlphabet(primaryCode) || isSpecialSeparator(primaryCode)) {
+                        mComposing.append((char) primaryCode);
+                        updatePredictionsVN();
+                    } else {
+                        commitTyped(getCurrentInputConnection());
+                        commitTextAsIs(primaryCode);
+                    }
+                    break;
                 }
-                updateCandidates();
-            }
-            else {
-                commitTyped(getCurrentInputConnection());
-                commitTextAsIs(primaryCode);
+                case LatinKeyboard.LANGUAGE_EN:
+                {
+                    if (isAlphabet(primaryCode)) {
+                        mComposing.append((char) primaryCode);
+                        updatePredictionsEN();
+                    } else {
+                        commitTyped(getCurrentInputConnection());
+                        commitTextAsIs(primaryCode);
+                    }
+                    break;
+                }
             }
         } else {
             commitTextAsIs(primaryCode);
@@ -804,7 +885,9 @@ public class SoftKeyboard extends InputMethodService
         }
 
         if (languageCode == LatinKeyboard.LANGUAGE_VN) {
-            updatePredictions();
+            // reset server predictions to prepare since we are now in language mode
+            // that requires server model
+            updateOrResetServerPredictions();
         } else {
             commitTyped(getCurrentInputConnection());
         }
@@ -979,7 +1062,7 @@ public class SoftKeyboard extends InputMethodService
                         }
                     }
                     if (localPrediction != null && predictions.size() >= 2) {
-                        String normalizedPrediction = StringUtil.normalizeStringCase(
+                        String normalizedPrediction = StringUtil.normalizeStringCaseDottedTruncate(
                                 predictions.get(1),
                                 new StringBuilder(predictions.get(0))
                         );
@@ -1029,7 +1112,7 @@ public class SoftKeyboard extends InputMethodService
                 mWordChoices = predictionData.WordChoices;
                 if (mPredictions != null && mPredictions.size() > 0) {
                     getCurrentInputConnection().setComposingText(mPredictions.get(0), 1);
-                    mGotPrediction.set(Boolean.TRUE);
+                    mGotServerPrediction.set(Boolean.TRUE);
                     mPredictionSemaphore.release();
                     updateCandidates();
                 }
@@ -1039,17 +1122,25 @@ public class SoftKeyboard extends InputMethodService
         }
 
         private String[][] predict(StringBuilder query) {
-            String SERVERIP = "accentype.cloudapp.net";
+            String SERVERIP = "accentypeheader.cloudapp.net";
 //        String SERVERIP = "10.0.3.2";
             int SERVERPORT = 10100;
 
+            mRequestId.compareAndSet(mMaxRequestId, 0);
+            int requestId = mRequestId.incrementAndGet();
             try {
                 InetAddress serverAddr = InetAddress.getByName(SERVERIP);
                 DatagramSocket socket = new DatagramSocket();
 
                 socket.setSoTimeout(500);
 
-                byte[] buf = query.toString().getBytes("US-ASCII");
+                byte[] header = shortToByteArray(requestId);
+                byte[] content = query.toString().getBytes("US-ASCII");
+                ByteBuffer buffer = ByteBuffer.allocate(header.length + content.length);
+                buffer.put(header);
+                buffer.put(content);
+                byte[] buf = buffer.array();
+
                 DatagramPacket packet = new DatagramPacket(buf, buf.length, serverAddr, SERVERPORT);
                 socket.send(packet);
 
@@ -1057,7 +1148,13 @@ public class SoftKeyboard extends InputMethodService
                 DatagramPacket replyPacket = new DatagramPacket(replyBuf, replyBuf.length);
                 socket.receive(replyPacket);
 
-                int index = 0;
+                int responseId = byteArrayToShort(replyBuf);
+                if (responseId != mRequestId.get()) {
+                    // only take the latest prediction
+                    return null;
+                }
+
+                int index = 2;
                 byte numWords = replyBuf[index++];
 
                 String[][] wordChoices = new String[numWords][];
@@ -1078,6 +1175,41 @@ public class SoftKeyboard extends InputMethodService
                 // TODO: Handle exception
             }
             return null;
+        }
+
+        private byte[] shortToByteArray(int value) {
+            return new byte[] {
+                    (byte)(value >> 8),
+                    (byte)value
+            };
+        }
+
+        private int byteArrayToShort(byte[] value) {
+            return ((value[0] & 0xFF) << 8) | (value[1] & 0xFF);
+        }
+    }
+
+    private class EnglishDictionaryLoader extends AsyncTask<Void, Void, AutoCompleteTrie> {
+        protected AutoCompleteTrie doInBackground(Void... v) {
+            try
+            {
+                InputStream accStream = getResources().openRawResource(R.raw.dict_en_10000);
+                BufferedReader accReader = new BufferedReader(new InputStreamReader(accStream, "UTF-8"));
+                AutoCompleteTrie dictionary = new AutoCompleteTrie();
+                String line;
+                while ((line = accReader.readLine()) != null) {
+                    dictionary.insert(line.trim());
+                }
+                return dictionary;
+            }
+            catch (UnsupportedEncodingException ex) { }
+            catch (IOException ex) { }
+
+            return new AutoCompleteTrie();
+        }
+
+        protected void onPostExecute(AutoCompleteTrie dictionary) {
+            mEnglishDictionary = dictionary;
         }
     }
 
