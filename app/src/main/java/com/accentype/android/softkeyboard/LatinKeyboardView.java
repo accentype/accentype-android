@@ -24,6 +24,7 @@ import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.Keyboard.Key;
 import android.inputmethodservice.KeyboardView;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 
 import java.util.List;
 
@@ -37,6 +38,9 @@ public class LatinKeyboardView extends KeyboardView {
 
     static Paint foregroundPaint = new Paint();
     static final int spaceKeyMargin = 10;
+
+    boolean mLastPredictionEnabled = false;
+    boolean mLongPressedDelete = false;
 
     public LatinKeyboardView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -56,6 +60,11 @@ public class LatinKeyboardView extends KeyboardView {
         } else if (key.codes[0] == KEYCODE_LANGUAGE_SWITCH) {
             getOnKeyboardActionListener().onKey(KEYCODE_INPUT_METHOD_SWITCH, null);
             return true;
+        } else if (key.codes[0] == Keyboard.KEYCODE_DELETE) {
+            // turn off server predictions during long pressing backspace key
+            mLastPredictionEnabled = ((SoftKeyboard)getOnKeyboardActionListener()).turnOffPredictionsIfNeeded();
+            mLongPressedDelete = true;
+            return false;
         } else {
             return super.onLongPress(key);
         }
@@ -77,5 +86,28 @@ public class LatinKeyboardView extends KeyboardView {
                 return;
             }
         }
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent me) {
+        switch (me.getAction()) {
+            case MotionEvent.ACTION_UP:
+                int x = (int) me.getX();
+                int y = (int) me.getY();
+                List<Key> keys = getKeyboard().getKeys();
+                for (Key key : keys) {
+                    if (key.codes[0] == Keyboard.KEYCODE_DELETE) {
+                        if (mLongPressedDelete && x >= key.x && x <= key.x + key.width && y >= key.y && y <= key.y + key.height) {
+                            // Restore server predictions on touch-up event
+                            // because if backspace is long pressed, predictions are disabled.
+                            ((SoftKeyboard)getOnKeyboardActionListener()).enablePredictions(mLastPredictionEnabled);
+                            mLongPressedDelete = false;
+                        }
+                        break;
+                    }
+                }
+                break;
+        }
+        return super.onTouchEvent(me);
     }
 }

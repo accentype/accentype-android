@@ -683,6 +683,28 @@ public class SoftKeyboard extends InputMethodService
     }
 
     /**
+     * Turn off prediction/suggestions if it's not already off.
+     *
+     * @return A boolean indicating the previous state of whether predictions were turned on.
+     */
+    public boolean turnOffPredictionsIfNeeded() {
+        if (mPredictionOn) {
+            mPredictionOn = false;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Turn on/off prediction based on specified parameter.
+     *
+     * @param enabled A boolean indicating whether to turn on prediction.
+     */
+    public void enablePredictions(boolean enabled) {
+        mPredictionOn = enabled;
+    }
+
+    /**
      * Reset local predictions with server results.
      */
     private void resetServerPredictions() {
