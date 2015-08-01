@@ -512,28 +512,17 @@ public class SoftKeyboard extends InputMethodService
             List<String> suggestions = mCandidateView != null ? mCandidateView.getSuggestions() : mPredictions;
             if (suggestions != null && suggestions.size() > index) {
                 String prediction = suggestions.get(index);
-                inputConnection.commitText(prediction, prediction.length());
+                inputConnection.commitText(prediction, 1);
                 if (getLanguageCode() == LatinKeyboard.LANGUAGE_VN) {
                     mLocalModel.learn(mComposing.toString(), prediction);
                 }
             }
             else {
-                inputConnection.commitText(mComposing, mComposing.length());
+                inputConnection.commitText(mComposing, 1);
             }
             mComposing.setLength(0);
             resetServerPredictions();
             updateCandidates();
-        }
-    }
-
-    private void commitPrediction(int index) {
-        if (mCandidateView != null && mComposing.length() > 0) {
-            List<String> suggestions = mCandidateView.getSuggestions();
-            if (suggestions != null && index >= 0 && index < suggestions.size()) {
-                String prediction = suggestions.get(index);
-                getCurrentInputConnection().commitText(prediction, prediction.length());
-                mLocalModel.learn(mComposing.toString(), prediction);
-            }
         }
     }
 
