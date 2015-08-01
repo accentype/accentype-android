@@ -213,7 +213,7 @@ public class SoftKeyboard extends InputMethodService
         // Reset our state.  We want to do this even if restarting, because
         // the underlying state of the text editor could have changed in any way.
         mComposing.setLength(0);
-        updateOrResetServerPredictions();
+        resetServerPredictions();
         updateCandidates();
 
         if (!restarting) {
@@ -304,7 +304,7 @@ public class SoftKeyboard extends InputMethodService
 
         // Clear current composing text and candidates.
         mComposing.setLength(0);
-        updateOrResetServerPredictions();
+        resetServerPredictions();
         updateCandidates();
 
         // We only hide the candidates window when finishing input on
@@ -340,7 +340,7 @@ public class SoftKeyboard extends InputMethodService
         if (mComposing.length() > 0 && (newSelStart != candidatesEnd
                 || newSelEnd != candidatesEnd)) {
             mComposing.setLength(0);
-            updateOrResetServerPredictions();
+            resetServerPredictions();
             updateCandidates();
             InputConnection ic = getCurrentInputConnection();
             if (ic != null) {
@@ -504,18 +504,24 @@ public class SoftKeyboard extends InputMethodService
      * Helper function to commit any text being composed in to the editor.
      */
     private void commitTyped(InputConnection inputConnection) {
+        commitTyped(inputConnection, 0);
+    }
+
+    private void commitTyped(InputConnection inputConnection, int index) {
         if (mComposing.length() > 0) {
             List<String> suggestions = mCandidateView != null ? mCandidateView.getSuggestions() : mPredictions;
-            if (suggestions != null && suggestions.size() > 0) {
-                String prediction = suggestions.get(0);
+            if (suggestions != null && suggestions.size() > index) {
+                String prediction = suggestions.get(index);
                 inputConnection.commitText(prediction, prediction.length());
-                mLocalModel.learn(mComposing.toString(), prediction);
+                if (getLanguageCode() == LatinKeyboard.LANGUAGE_VN) {
+                    mLocalModel.learn(mComposing.toString(), prediction);
+                }
             }
             else {
                 inputConnection.commitText(mComposing, mComposing.length());
             }
             mComposing.setLength(0);
-            updateOrResetServerPredictions();
+            resetServerPredictions();
             updateCandidates();
         }
     }
@@ -601,9 +607,7 @@ public class SoftKeyboard extends InputMethodService
             }
             else {
                 // Handle separator
-                if (mComposing.length() > 0) {
-                    commitTyped(getCurrentInputConnection());
-                }
+                commitTyped(getCurrentInputConnection());
                 sendKey(primaryCode);
                 updateShiftKeyState(getCurrentInputEditorInfo());
             }
@@ -644,9 +648,7 @@ public class SoftKeyboard extends InputMethodService
         InputConnection ic = getCurrentInputConnection();
         if (ic == null) return;
         ic.beginBatchEdit();
-        if (mComposing.length() > 0) {
-            commitTyped(ic);
-        }
+        commitTyped(ic);
         ic.commitText(text, 0);
         ic.endBatchEdit();
         updateShiftKeyState(getCurrentInputEditorInfo());
@@ -687,10 +689,17 @@ public class SoftKeyboard extends InputMethodService
             new Predictor().execute(composing);
         }
         else {
-            mPredictions = EMPTY_LIST;
-            mWordChoices = null;
-            mGotServerPrediction.set(Boolean.FALSE);
+            this.resetServerPredictions();
         }
+    }
+
+    /**
+     * Reset local predictions with server results.
+     */
+    private void resetServerPredictions() {
+        mPredictions = EMPTY_LIST;
+        mWordChoices = null;
+        mGotServerPrediction.set(Boolean.FALSE);
     }
 
     /**
@@ -769,7 +778,7 @@ public class SoftKeyboard extends InputMethodService
             mComposing.setLength(0);
             // this clears internal prediction values so we can
             // call it regardless of the current language mode
-            updateOrResetServerPredictions();
+            resetServerPredictions();
             getCurrentInputConnection().commitText("", 0);
             updateCandidates();
         } else {
@@ -960,7 +969,7 @@ public class SoftKeyboard extends InputMethodService
             }
             updateShiftKeyState(getCurrentInputEditorInfo());
         } else if (mComposing.length() > 0) {
-            commitPrediction(index);
+            commitTyped(getCurrentInputConnection(), index);
         }
     }
 
