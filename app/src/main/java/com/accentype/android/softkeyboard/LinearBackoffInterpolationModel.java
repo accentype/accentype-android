@@ -3,14 +3,12 @@ package com.accentype.android.softkeyboard;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Debug;
-import android.util.Log;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.text.MessageFormat;
 import java.util.HashMap;
 
@@ -139,12 +137,12 @@ public class LinearBackoffInterpolationModel implements BaseModel {
                 mLocalModelBinaryWriter.writeInt(mPhraseHistory.get(s));
             }
 
-            LogUtil.Log(this.getClass().getName(),
+            LogUtil.LogMessage(this.getClass().getName(),
                     MessageFormat.format("Serialized model with {0} unique phrases", mPhraseHistory.size())
             );
         }
         catch (IOException ex) {
-            LogUtil.Log(this.getClass().getName(), "Error in async server predict: " + ex.getMessage());
+            LogUtil.LogError(this.getClass().getName(), "Error in async server predict", ex);
         }
     }
 
@@ -317,6 +315,8 @@ public class LinearBackoffInterpolationModel implements BaseModel {
                 File localModelFile = new File(mContext.getFilesDir(), localModelFileName);
 
                 mLocalModelOutputStream = new FileOutputStream(localModelFile);
+                long fileSize = mLocalModelOutputStream.getChannel().size();
+
                 mLocalModelBinaryWriter = new DataOutputStream(mLocalModelOutputStream);
 
                 // if not exists, then write header information and return
@@ -380,7 +380,7 @@ public class LinearBackoffInterpolationModel implements BaseModel {
             }
             catch (Exception ex)
             {
-                LogUtil.Log(this.getClass().getName(), "Error in async local model load: " + ex.getMessage());
+                LogUtil.LogError(this.getClass().getName(), "Error in async local model load", ex);
             }
 
             return localModel;

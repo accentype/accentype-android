@@ -28,10 +28,8 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -449,8 +447,8 @@ public class CandidateView extends View {
         invalidate();
         requestLayout();
 
-        LogUtil.Log(this.getClass().getName(),
-            MessageFormat.format("secondary suggestion word index {0} picked", index)
+        LogUtil.LogMessage(this.getClass().getName(),
+                MessageFormat.format("secondary suggestion word index {0} picked", index)
         );
     }
 
@@ -552,7 +550,7 @@ public class CandidateView extends View {
                 return dictionary;
             }
             catch (Exception ex) {
-                LogUtil.Log(this.getClass().getName(), "Error in async vn dict load: " + ex.getMessage());
+                LogUtil.LogError(this.getClass().getName(), "Error in async vn dict load", ex);
             }
 
             return null;
