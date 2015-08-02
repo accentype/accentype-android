@@ -27,15 +27,12 @@ public class LinearBackoffInterpolationModel implements BaseModel {
     private float beta2 = 0.15f;
     private float beta1 = 0.1f;
 
-    // I/O manager
-    private DataOutputStream mLocalModelBinaryWriter;
-    private FileOutputStream mLocalModelOutputStream;
-
     private PhraseHistory mPhraseHistory;
+    private Context mContext;
 
     protected LinearBackoffInterpolationModel(Context context) {
-
-        new LoadFromFile(context).execute();
+        mContext = context;
+        new LoadFromFile().execute();
 
         model1 = new PhraseLookup();
         model2 = new PhraseLookup();
@@ -127,14 +124,21 @@ public class LinearBackoffInterpolationModel implements BaseModel {
             // overwriting existing content but should be ok since history is only larger
             // this is inefficient, see todo above.
 
-            mLocalModelBinaryWriter.writeInt(mPhraseHistory.size()); // update count
+            String localModelFileName = mContext.getString(R.string.model_file_name);
+            File localModelFile = new File(mContext.getFilesDir(), localModelFileName);
+
+            FileOutputStream localModelOutputStream = new FileOutputStream(localModelFile); // truncates file if exists
+            DataOutputStream localModelBinaryWriter = new DataOutputStream(localModelOutputStream);
+
+            localModelBinaryWriter.writeInt(version()); // model version
+            localModelBinaryWriter.writeInt(mPhraseHistory.size()); // update count
 
             for (String s : mPhraseHistory.keySet()) {
                 byte[] accentBytes = s.getBytes("UTF-8"); // accent string
-                mLocalModelBinaryWriter.writeByte(accentBytes.length);
-                mLocalModelBinaryWriter.write(accentBytes);
+                localModelBinaryWriter.writeByte(accentBytes.length);
+                localModelBinaryWriter.write(accentBytes);
 
-                mLocalModelBinaryWriter.writeInt(mPhraseHistory.get(s));
+                localModelBinaryWriter.writeInt(mPhraseHistory.get(s));
             }
 
             LogUtil.LogMessage(this.getClass().getName(),
@@ -297,12 +301,6 @@ public class LinearBackoffInterpolationModel implements BaseModel {
     }
 
     private class LoadFromFile extends AsyncTask<Void, Void, LocalModelItemData> {
-        private Context mContext;
-
-        public LoadFromFile(Context context) {
-            mContext = context;
-        }
-
         /** The system calls this to perform work in a worker thread and
          * delivers it the parameters given to AsyncTask.execute() */
         protected LocalModelItemData doInBackground(Void... params) {
@@ -310,19 +308,11 @@ public class LinearBackoffInterpolationModel implements BaseModel {
 
             try
             {
-                Debug.waitForDebugger();
                 String localModelFileName = mContext.getString(R.string.model_file_name);
                 File localModelFile = new File(mContext.getFilesDir(), localModelFileName);
 
-                mLocalModelOutputStream = new FileOutputStream(localModelFile);
-                long fileSize = mLocalModelOutputStream.getChannel().size();
-
-                mLocalModelBinaryWriter = new DataOutputStream(mLocalModelOutputStream);
-
-                // if not exists, then write header information and return
-                if (!localModelFile.exists()) {
-                    mLocalModelBinaryWriter.writeInt(version()); // model version
-                    mLocalModelBinaryWriter.writeInt(0); // number of entries
+                // ok if file not exists, will be created & written to on destroy
+                if (!localModelFile.exists() || localModelFile.length() == 0) {
                     return localModel;
                 }
 
@@ -332,10 +322,8 @@ public class LinearBackoffInterpolationModel implements BaseModel {
                 try {
                     int modelVersion = binaryReader.readInt();
                     if (modelVersion != version()) {
-                        // TODO: convert from older versions to this version instead of deleting
-                        mLocalModelOutputStream.getChannel().truncate(0);
-                        mLocalModelBinaryWriter.writeInt(version()); // model version
-                        mLocalModelBinaryWriter.writeInt(0); // number of entries
+                        // ok if older version, will be truncated & written to on destroy
+                        // TODO: convert from older version to maintain history
                         return localModel;
                     }
                     int numEntries = binaryReader.readInt();
@@ -372,6 +360,8 @@ public class LinearBackoffInterpolationModel implements BaseModel {
                         localModel.model2 = m2;
                         localModel.model3 = m3;
                         localModel.history = hist;
+
+                        LogUtil.LogMessage(this.getClass().getName(), "Successfully loaded local model file.");
                     }
                 }
                 finally {
@@ -380,6 +370,8 @@ public class LinearBackoffInterpolationModel implements BaseModel {
             }
             catch (Exception ex)
             {
+                // If any exception occurs when reading, the local model file will be recreated
+                // with new history on destroy.
                 LogUtil.LogError(this.getClass().getName(), "Error in async local model load", ex);
             }
 
