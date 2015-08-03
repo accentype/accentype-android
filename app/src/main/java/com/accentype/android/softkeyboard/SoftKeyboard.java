@@ -666,20 +666,6 @@ public class SoftKeyboard extends InputMethodService
     }
 
     /**
-     * Update local predictions with server results or resets if keyboard is in a state
-     * that does not need server predictions.
-     */
-    private void updateOrResetServerPredictions() {
-        String composing = mComposing.toString();
-        if (mPredictionOn && getLanguageCode() == LatinKeyboard.LANGUAGE_VN && composing.trim().length() > 0) {
-            new Predictor().execute(composing);
-        }
-        else {
-            this.resetServerPredictions();
-        }
-    }
-
-    /**
      * Turn off prediction/suggestions if it's not already off.
      *
      * @return A boolean indicating the previous state of whether predictions were turned on.
@@ -711,10 +697,17 @@ public class SoftKeyboard extends InputMethodService
     }
 
     /**
-     * Update internal prediction values & candidate suggestions for VN language.
+     * Update internal prediction values & candidate suggestions for VN language or
+     * resets predictions if keyboard is in a state that does not need server predictions.
      */
     private void updatePredictionsVN() {
-        updateOrResetServerPredictions();
+        String composing = mComposing.toString();
+        if (mPredictionOn && getLanguageCode() == LatinKeyboard.LANGUAGE_VN && composing.trim().length() > 0) {
+            new Predictor().execute(composing);
+        }
+        else {
+            this.resetServerPredictions();
+        }
         if (!mGotServerPrediction.get()) {
             getCurrentInputConnection().setComposingText(mComposing, 1);
         }
@@ -902,13 +895,12 @@ public class SoftKeyboard extends InputMethodService
                 languageCode = LatinKeyboard.LANGUAGE_VN;
                 break;
         }
+        commitTyped(getCurrentInputConnection());
 
         if (languageCode == LatinKeyboard.LANGUAGE_VN) {
             // reset server predictions to prepare since we are now in language mode
             // that requires server model
-            updateOrResetServerPredictions();
-        } else {
-            commitTyped(getCurrentInputConnection());
+            resetServerPredictions();
         }
 
         if (mInputView != null) {
