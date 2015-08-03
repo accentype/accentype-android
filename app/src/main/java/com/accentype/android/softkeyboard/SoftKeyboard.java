@@ -1085,7 +1085,7 @@ public class SoftKeyboard extends InputMethodService
                             }
                         }
                         if (localPrediction != null && predictions.size() >= 2) {
-                            String normalizedPrediction = StringUtil.normalizeStringCaseDottedTruncate(
+                            String normalizedPrediction = StringUtil.replaceDottedPreserveCase(
                                     predictions.get(1),
                                     new StringBuilder(predictions.get(0))
                             );
@@ -1111,9 +1111,15 @@ public class SoftKeyboard extends InputMethodService
                             prediction.replace(q, q + choice.length(), choice);
                             q += choice.length();
                         }
-                        predictions = new ArrayList<>(1);
+                        predictions = new ArrayList<>(2);
                         if (localPrediction != null) {
-                            predictions.add(localPrediction);
+                            String normalizedPrediction = StringUtil.replaceDottedPreserveCase(
+                                prediction.toString(),
+                                new StringBuilder(localPrediction)
+                            );
+                            if (!normalizedPrediction.equals(prediction.toString())) {
+                                predictions.add(normalizedPrediction);
+                            }
                         }
                         predictions.add(prediction.toString());
                     }
