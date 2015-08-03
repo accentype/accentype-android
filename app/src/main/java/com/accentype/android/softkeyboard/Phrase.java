@@ -4,9 +4,9 @@ package com.accentype.android.softkeyboard;
  * Represents a phrase of up to three words.
  */
 public class Phrase {
-    private String w1 = null;
-    private String w2 = null;
-    private String w3 = null;
+    private String w1 = "";
+    private String w2 = "";
+    private String w3 = "";
 
     public Phrase(String q1) {
         w1 = q1;
@@ -24,11 +24,7 @@ public class Phrase {
     }
 
     public int hashCode() {
-        int hashCode = 1;
-        hashCode = (w1 == null) ? 31 * hashCode : 31 * hashCode + w1.hashCode();
-        hashCode = (w2 == null) ? 31 * hashCode : 31 * hashCode + w2.hashCode();
-        hashCode = (w3 == null) ? 31 * hashCode : 31 * hashCode + w3.hashCode();
-        return hashCode;
+        return 29791 + 961 * w1.hashCode() + 31 * w2.hashCode() + w3.hashCode();
     }
 
     public boolean equals(Object o) {
