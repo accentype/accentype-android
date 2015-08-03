@@ -1124,11 +1124,11 @@ public class SoftKeyboard extends InputMethodService
 
                     return data;
                 }
-                return null;
             }
             catch (Exception ex) {
                 LogUtil.LogError(this.getClass().getName(), "Failed to predict in background", ex);
             }
+            return null;
         }
 
         /** The system calls this to perform work in the UI thread and delivers
