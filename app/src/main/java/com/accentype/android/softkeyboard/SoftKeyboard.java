@@ -1020,10 +1020,13 @@ public class SoftKeyboard extends InputMethodService
     }
 
     private class Predictor extends AsyncTask<String, Void, PredictionData> {
+        private final static String ServerAddress = "accentypeheader.cloudapp.net";
+        private final static int ServerPort = 10100;
+
         /** The system calls this to perform work in a worker thread and
          * delivers it the parameters given to AsyncTask.execute() */
         protected PredictionData doInBackground(String... composing) {
-            StringBuilder query = new StringBuilder(composing[0]);
+            String query = composing[0];
             String[][] choices = predict(query);
 
             String localPrediction = mLocalModel.predict(composing[0]);
@@ -1071,7 +1074,7 @@ public class SoftKeyboard extends InputMethodService
 
                         // If single-word query, fill suggestions from dictionary regardless of max
                         if (choices.length == 1) {
-                            String[] dictPredictions = mCandidateView.getFromDictionary(query.toString());
+                            String[] dictPredictions = mCandidateView.getFromDictionary(query);
                             if (dictPredictions != null) {
                                 for (String suggestion : dictPredictions) {
                                     String normalizedSuggestion = replaceKeepingWhiteSpace(composing[0], suggestion);
@@ -1119,6 +1122,7 @@ public class SoftKeyboard extends InputMethodService
                 PredictionData data = new PredictionData();
                 data.Predictions = predictions;
                 data.WordChoices = choices;
+
                 return data;
             }
             return null;
@@ -1142,27 +1146,23 @@ public class SoftKeyboard extends InputMethodService
             mPredictionSemaphore.release();
         }
 
-        private String[][] predict(StringBuilder query) {
-            String SERVERIP = "accentypeheader.cloudapp.net";
-//        String SERVERIP = "10.0.3.2";
-            int SERVERPORT = 10100;
-
+        private String[][] predict(String query) {
             mRequestId.compareAndSet(mMaxRequestId, 0);
             int requestId = mRequestId.incrementAndGet();
             try {
-                InetAddress serverAddr = InetAddress.getByName(SERVERIP);
+                InetAddress serverAddr = InetAddress.getByName(ServerAddress);
                 DatagramSocket socket = new DatagramSocket();
 
                 socket.setSoTimeout(500);
 
                 byte[] header = shortToByteArray(requestId);
-                byte[] content = query.toString().getBytes("US-ASCII");
+                byte[] content = query.getBytes("US-ASCII");
                 ByteBuffer buffer = ByteBuffer.allocate(header.length + content.length);
                 buffer.put(header);
                 buffer.put(content);
                 byte[] buf = buffer.array();
 
-                DatagramPacket packet = new DatagramPacket(buf, buf.length, serverAddr, SERVERPORT);
+                DatagramPacket packet = new DatagramPacket(buf, buf.length, serverAddr, ServerPort);
                 socket.send(packet);
 
                 byte[] replyBuf = new byte[65536];
@@ -1173,12 +1173,12 @@ public class SoftKeyboard extends InputMethodService
                 if (responseId != mRequestId.get()) {
                     // only take the latest prediction
                     LogUtil.LogMessage(this.getClass().getName(),
-                            MessageFormat.format(
-                                    "response id {0} doesn't match request id {1}, query: {2}",
-                                    responseId,
-                                    requestId,
-                                    query.toString()
-                            )
+                        MessageFormat.format(
+                            "response id {0} doesn't match request id {1}, query: {2}",
+                            responseId,
+                            requestId,
+                            query
+                        )
                     );
                     return null;
                 }
