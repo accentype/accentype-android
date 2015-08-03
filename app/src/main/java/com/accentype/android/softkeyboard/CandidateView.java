@@ -22,18 +22,13 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.os.AsyncTask;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 public class CandidateView extends View {
@@ -47,7 +42,7 @@ public class CandidateView extends View {
     private int mFlingSuggestionIndex = -1;
     private int mFlingWordIndex = -1;
     private String[][] mWordChoices;
-    private HashMap<String, String[]> mDictionary;
+    private DictionaryVN mDictionary;
     private int mSelectedIndex;
     private int mTouchX = OUT_OF_BOUNDS;
     private Drawable mSelectionHighlight;
@@ -86,7 +81,7 @@ public class CandidateView extends View {
         super(context);
         mSelectionHighlight = context.getResources().getDrawable(
                 android.R.drawable.list_selector_background);
-        mSelectionHighlight.setState(new int[] {
+        mSelectionHighlight.setState(new int[]{
                 android.R.attr.state_enabled,
                 android.R.attr.state_focused,
                 android.R.attr.state_window_focused,
@@ -109,7 +104,7 @@ public class CandidateView extends View {
         mPaint.setTextSize(r.getDimensionPixelSize(R.dimen.candidate_font_height));
         mPaint.setStrokeWidth(0);
 
-        new DictionaryLoader().execute();
+        mDictionary = DictionaryVN.getInstance(r.openRawResource(R.raw.dict_vn));
 
         mGestureDetector = new GestureDetector(null, new GestureDetector.SimpleOnGestureListener() {
             @Override
@@ -142,7 +137,7 @@ public class CandidateView extends View {
                     if (iWord < 0) {
                         return false;
                     }
-                    String[] additionalChoices = getFromDictionary(mComposing, iWord);
+                    String[] additionalChoices = mDictionary.get(mComposing, iWord);
                     mSecondarySuggestions = new ArrayList<>(Arrays.asList(mWordChoices[iWord]));
                     if (additionalChoices != null) {
                         for (int k = 0; k < additionalChoices.length; k++) {
@@ -497,69 +492,5 @@ public class CandidateView extends View {
     private class TouchLocation {
         public int WordIndex;
         public int SuggestionIndex;
-    }
-
-    // Get first word
-    public String[] getFromDictionary(String query) {
-        return getFromDictionary(query, 0);
-    }
-    public String[] getFromDictionary(String query, int iWord) {
-        if (mDictionary != null && query != null) {
-            String[] rawWords = query.trim().split("\\s+");
-            if (iWord < rawWords.length) {
-                String rawWord = rawWords[iWord];
-                String rawWordLower = rawWord.toLowerCase();
-                if (mDictionary.containsKey(rawWordLower)) {
-                    List<Integer> upperCaseLocations = new ArrayList<>();
-                    for (int i = 0; i < rawWord.length(); i++) {
-                        if (Character.isUpperCase(rawWord.charAt(i))) {
-                            upperCaseLocations.add(i);
-                        }
-                    }
-                    // Normalize case w.r.t raw word
-                    String[] dictionaryChoices = mDictionary.get(rawWordLower);
-                    String[] additionalChoices = new String[dictionaryChoices.length];
-                    for (int i = 0; i < dictionaryChoices.length; i++) {
-                        char[] choiceChars = dictionaryChoices[i].toCharArray();
-                        for (int j = 0; j < upperCaseLocations.size(); j++) {
-                            choiceChars[j] = Character.toUpperCase(choiceChars[j]);
-                        }
-                        additionalChoices[i] = new String(choiceChars);
-                    }
-                    return additionalChoices;
-                }
-            }
-        }
-        return null;
-    }
-
-    private class DictionaryLoader extends AsyncTask<Void, Void, HashMap<String, String[]>> {
-        /** The system calls this to perform work in a worker thread and
-         * delivers it the parameters given to AsyncTask.execute() */
-        protected HashMap<String, String[]> doInBackground(Void... params) {
-            try
-            {
-                InputStream accStream = getResources().openRawResource(R.raw.dict_vn);
-                BufferedReader accReader = new BufferedReader(new InputStreamReader(accStream, "UTF-8"));
-                HashMap<String, String[]> dictionary = new HashMap<>();
-                String line;
-                while ((line = accReader.readLine()) != null) {
-                    String[] words = line.split("\\s+");
-                    dictionary.put(words[0], words);
-                }
-                return dictionary;
-            }
-            catch (Exception ex) {
-                LogUtil.LogError(this.getClass().getName(), "Error in async vn dict load", ex);
-            }
-
-            return null;
-        }
-
-        /** The system calls this to perform work in the UI thread and delivers
-         * the result from doInBackground() */
-        protected void onPostExecute(HashMap<String, String[]> dictionary) {
-            mDictionary = dictionary;
-        }
     }
 }

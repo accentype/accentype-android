@@ -37,11 +37,6 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -87,7 +82,8 @@ public class SoftKeyboard extends InputMethodService
     private BaseModel mLocalModel;
     private List<String> mPredictions;
     private String[][] mWordChoices;
-    private AutoCompleteTrie mEnglishDictionary = new AutoCompleteTrie();
+    private DictionaryEN mDictionaryEN;
+    private DictionaryVN mDictionaryVN;
     private boolean mPredictionOn;
     private boolean mCompletionOn;
     private int mLastDisplayWidth;
@@ -137,7 +133,9 @@ public class SoftKeyboard extends InputMethodService
         mSettings = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
         mLocalModel = ModelFactory.create(ModelVersion.LINEAR_BACKOFF_INTERPOLATION, this);
-        new EnglishDictionaryLoader().execute();
+
+        mDictionaryEN = DictionaryEN.getInstance(getResources().openRawResource(R.raw.dict_en_10000));
+        mDictionaryVN = DictionaryVN.getInstance(getResources().openRawResource(R.raw.dict_vn));
     }
 
     /**
@@ -731,7 +729,7 @@ public class SoftKeyboard extends InputMethodService
     private void updatePredictionsEN() {
         getCurrentInputConnection().setComposingText(mComposing, 1);
         String query = mComposing.toString().toLowerCase();
-        List<String> suggestions = (List<String>)mEnglishDictionary.autoComplete(query);
+        List<String> suggestions = (List<String>) mDictionaryEN.complete(query);
         for (int i = 0; i < suggestions.size(); i++) {
             suggestions.set(
                     i,
@@ -1074,7 +1072,7 @@ public class SoftKeyboard extends InputMethodService
 
                         // If single-word query, fill suggestions from dictionary regardless of max
                         if (choices.length == 1) {
-                            String[] dictPredictions = mCandidateView.getFromDictionary(query);
+                            String[] dictPredictions = mDictionaryVN.get(query);
                             if (dictPredictions != null) {
                                 for (String suggestion : dictPredictions) {
                                     String normalizedSuggestion = replaceKeepingWhiteSpace(composing[0], suggestion);
@@ -1215,31 +1213,6 @@ public class SoftKeyboard extends InputMethodService
 
         private int byteArrayToShort(byte[] value) {
             return ((value[0] & 0xFF) << 8) | (value[1] & 0xFF);
-        }
-    }
-
-    private class EnglishDictionaryLoader extends AsyncTask<Void, Void, AutoCompleteTrie> {
-        protected AutoCompleteTrie doInBackground(Void... v) {
-            try
-            {
-                InputStream accStream = getResources().openRawResource(R.raw.dict_en_10000);
-                BufferedReader accReader = new BufferedReader(new InputStreamReader(accStream, "UTF-8"));
-                AutoCompleteTrie dictionary = new AutoCompleteTrie();
-                String line;
-                while ((line = accReader.readLine()) != null) {
-                    dictionary.insert(line.trim());
-                }
-                return dictionary;
-            }
-            catch (Exception ex) {
-                LogUtil.LogError(this.getClass().getName(), "Cannot load auto-complete trie for English", ex);
-            }
-
-            return new AutoCompleteTrie();
-        }
-
-        protected void onPostExecute(AutoCompleteTrie dictionary) {
-            mEnglishDictionary = dictionary;
         }
     }
 
