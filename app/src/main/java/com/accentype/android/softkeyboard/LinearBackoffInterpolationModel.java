@@ -2,7 +2,6 @@ package com.accentype.android.softkeyboard;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.os.Debug;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -17,9 +16,9 @@ import java.util.HashMap;
  */
 public class LinearBackoffInterpolationModel implements BaseModel {
 
-    private PhraseLookup model1 = null;
-    private PhraseLookup model2 = null;
-    private PhraseLookup model3 = null;
+    private PhraseMap model1 = null;
+    private PhraseMap model2 = null;
+    private PhraseMap model3 = null;
 
     private static LinearBackoffInterpolationModel instance = null;
 
@@ -34,9 +33,9 @@ public class LinearBackoffInterpolationModel implements BaseModel {
         mContext = context;
         new LoadFromFile().execute();
 
-        model1 = new PhraseLookup();
-        model2 = new PhraseLookup();
-        model3 = new PhraseLookup();
+        model1 = new PhraseMap();
+        model2 = new PhraseMap();
+        model3 = new PhraseMap();
         mPhraseHistory = new PhraseHistory();
     }
 
@@ -155,7 +154,7 @@ public class LinearBackoffInterpolationModel implements BaseModel {
     }
 
     private static void learnStatic(String rawPhrase, String accentPhrase, short count,
-        PhraseLookup m1, PhraseLookup m2, PhraseLookup m3, HashMap<String, Integer> hist)
+        PhraseMap m1, PhraseMap m2, PhraseMap m3, HashMap<String, Integer> hist)
     {
         if (rawPhrase == null || accentPhrase == null) {
             return;
@@ -175,24 +174,24 @@ public class LinearBackoffInterpolationModel implements BaseModel {
 
         // for single word query, simply do look up
         if (rawWords.length == 1) {
-            m1.add(rawWords[0], accentWords[0], count);
+            m1.add(new Phrase(rawWords[0]), accentWords[0], count);
             return;
         }
 
         for (int i = 0; i < rawWords.length - 1; i++) {
             // TODO: use composite hash key instead of concatenating string with spaces
             m2.add(
-                    String.format("%s %s", rawWords[i], rawWords[i + 1]),
-                    String.format("%s %s", accentWords[i], accentWords[i + 1]),
-                    count
+                new Phrase(rawWords[i], rawWords[i + 1]),
+                String.format("%s %s", accentWords[i], accentWords[i + 1]),
+                count
             );
         }
 
         for (int i = 0; i < rawWords.length - 2; i++) {
             m3.add(
-                    String.format("%s %s %s", rawWords[i], rawWords[i + 1], rawWords[i + 2]),
-                    String.format("%s %s %s", accentWords[i], accentWords[i + 1], accentWords[i + 2]),
-                    count
+                new Phrase(rawWords[i], rawWords[i + 1], rawWords[i + 2]),
+                String.format("%s %s %s", accentWords[i], accentWords[i + 1], accentWords[i + 2]),
+                count
             );
         }
     }
@@ -201,7 +200,7 @@ public class LinearBackoffInterpolationModel implements BaseModel {
         String[] words,
         int iW,
         double weight,
-        PhraseLookup model,
+        PhraseMap model,
         int n,
         HashMap<String, Double> accentScoreMap) {
 
@@ -216,9 +215,9 @@ public class LinearBackoffInterpolationModel implements BaseModel {
         int g3End = Math.min(iW + g, words.length - 1);
 
         for (int jW = g3Start; jW <= g3End - g; jW++) {
-            String segment =
-                (g == 2) ? String.format("%s %s %s", words[jW], words[jW + 1], words[jW + 2]) :
-                (g == 1) ? String.format("%s %s", words[jW], words[jW + 1]) : words[jW];
+            Phrase segment =
+                (g == 2) ? new Phrase(words[jW], words[jW + 1], words[jW + 2]) :
+                (g == 1) ? new Phrase(words[jW], words[jW + 1]) : new Phrase(words[jW]);
 
             HashMap<String, Short> accentsCountMap = model.lookup(segment);
             if (accentsCountMap == null) {
@@ -239,63 +238,6 @@ public class LinearBackoffInterpolationModel implements BaseModel {
                     accentScoreMap.put(accentedWord, 0.0);
                 }
                 accentScoreMap.put(accentedWord, accentScoreMap.get(accentedWord) + accScore);
-            }
-        }
-    }
-
-    class PhraseLookup extends HashMap<String, HashMap<String, Short>> {
-        public boolean isEmpty() {
-            return this.size() == 0;
-        }
-
-        public HashMap<String, Short> lookup(String rawPhrase) {
-            if (this.containsKey(rawPhrase)) {
-                return this.get((rawPhrase));
-            }
-            return null;
-        }
-
-        public void add(String rawPhrase, String accentPhrase, short count) {
-            if (this.containsKey(rawPhrase)) {
-                HashMap<String, Short> accentPairs = this.get(rawPhrase);
-                if (accentPairs.containsKey(accentPhrase)) {
-                    accentPairs.put(accentPhrase, (short)(accentPairs.get(accentPhrase) + count));
-                }
-                else {
-                    accentPairs.put(accentPhrase, (short)0);
-                }
-            }
-            else {
-                HashMap<String, Short> accentPairs = new HashMap<>();
-                accentPairs.put(accentPhrase, count);
-                this.put(rawPhrase, accentPairs);
-            }
-        }
-
-        public void merge(PhraseLookup pl) {
-            if (pl == null) {
-                return;
-            }
-            for (String rawPhrase : pl.keySet()) {
-                for (String accentPhrase : pl.get(rawPhrase).keySet()) {
-                    this.add(rawPhrase, accentPhrase, pl.get(rawPhrase).get(accentPhrase));
-                }
-            }
-        }
-    }
-
-    class PhraseHistory extends HashMap<String, Integer> {
-        public void merge(PhraseHistory ph) {
-            if (ph == null) {
-                return;
-            }
-            for (String phrase : ph.keySet()) {
-                if (this.containsKey(phrase)) {
-                    this.put(phrase, ph.get(phrase) + this.get(phrase));
-                }
-                else {
-                    this.put(phrase, ph.get(phrase));
-                }
             }
         }
     }
@@ -328,9 +270,9 @@ public class LinearBackoffInterpolationModel implements BaseModel {
                     }
                     int numEntries = binaryReader.readInt();
 
-                    PhraseLookup m1 = new PhraseLookup();
-                    PhraseLookup m2 = new PhraseLookup();
-                    PhraseLookup m3 = new PhraseLookup();
+                    PhraseMap m1 = new PhraseMap();
+                    PhraseMap m2 = new PhraseMap();
+                    PhraseMap m3 = new PhraseMap();
                     PhraseHistory hist = new PhraseHistory();
 
                     for (int i = 0; i < numEntries; i++) {
@@ -389,9 +331,9 @@ public class LinearBackoffInterpolationModel implements BaseModel {
     }
 
     private class LocalModelItemData {
-        PhraseLookup model1;
-        PhraseLookup model2;
-        PhraseLookup model3;
+        PhraseMap model1;
+        PhraseMap model2;
+        PhraseMap model3;
         PhraseHistory history;
     }
 }
