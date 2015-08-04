@@ -1,6 +1,5 @@
 package com.accentype.android.softkeyboard;
 
-import android.content.Context;
 import android.os.AsyncTask;
 
 import java.io.DataInputStream;
@@ -16,9 +15,10 @@ import java.util.HashMap;
  */
 public class LinearBackoffInterpolationModel implements BaseModel {
 
-    private PhraseMap model1 = null;
-    private PhraseMap model2 = null;
-    private PhraseMap model3 = null;
+    private PhraseMap mModel1 = new PhraseMap();
+    private PhraseMap mModel2 = new PhraseMap();
+    private PhraseMap mModel3 = new PhraseMap();
+    private PhraseHistory mPhraseHistory = new PhraseHistory();
 
     private static LinearBackoffInterpolationModel instance = null;
 
@@ -26,22 +26,20 @@ public class LinearBackoffInterpolationModel implements BaseModel {
     private float beta2 = 0.15f;
     private float beta1 = 0.1f;
 
-    private PhraseHistory mPhraseHistory;
-    private Context mContext;
 
-    protected LinearBackoffInterpolationModel(Context context) {
-        mContext = context;
+    private String mFileName;
+    private String mFileDir;
+
+    protected LinearBackoffInterpolationModel(String fileName, String fileDir) {
+        mFileName = fileName;
+        mFileDir = fileDir;
+
         new LoadFromFile().execute();
-
-        model1 = new PhraseMap();
-        model2 = new PhraseMap();
-        model3 = new PhraseMap();
-        mPhraseHistory = new PhraseHistory();
     }
 
-    public static LinearBackoffInterpolationModel getInstance(Context context) {
+    public static LinearBackoffInterpolationModel getInstance(String fileName, String fileDir) {
         if(instance == null) {
-            instance = new LinearBackoffInterpolationModel(context);
+            instance = new LinearBackoffInterpolationModel(fileName, fileDir);
         }
         return instance;
     }
@@ -56,7 +54,7 @@ public class LinearBackoffInterpolationModel implements BaseModel {
 
         // for single-word query, take most likely
         if (words.length == 1) {
-            HashMap<String, Short> accentsCountMap = model1.lookup(new Phrase(words[0]));
+            HashMap<String, Short> accentsCountMap = mModel1.lookup(new Phrase(words[0]));
             if (accentsCountMap == null) {
                 return null;
             }
@@ -80,8 +78,8 @@ public class LinearBackoffInterpolationModel implements BaseModel {
                 HashMap<String, Double> accScoreMap = new HashMap<>();
 
                 // only look at 2-gram & 3-gram
-                ComputeAccentScore(words, i, beta3, model3, 3, accScoreMap);
-                ComputeAccentScore(words, i, beta2, model2, 2, accScoreMap);
+                ComputeAccentScore(words, i, beta3, mModel3, 3, accScoreMap);
+                ComputeAccentScore(words, i, beta2, mModel2, 2, accScoreMap);
 
                 String bestPrediction = null;
                 if (accScoreMap.size() > 0) {
@@ -113,7 +111,7 @@ public class LinearBackoffInterpolationModel implements BaseModel {
     }
 
     @Override public void learn(String rawPhrase, String accentPhrase) {
-        learnStatic(rawPhrase, accentPhrase, (short)1, model1, model2, model3, mPhraseHistory);
+        learnStatic(rawPhrase, accentPhrase, (short)1, mModel1, mModel2, mModel3, mPhraseHistory);
     }
 
     @Override public void dispose() {
@@ -123,8 +121,8 @@ public class LinearBackoffInterpolationModel implements BaseModel {
             // overwriting existing content but should be ok since history is only larger
             // this is inefficient, see todo above.
 
-            String localModelFileName = mContext.getString(R.string.model_file_name);
-            File localModelFile = new File(mContext.getFilesDir(), localModelFileName);
+            String localModelFileName = mFileName;
+            File localModelFile = new File(mFileDir, localModelFileName);
 
             FileOutputStream localModelOutputStream = new FileOutputStream(localModelFile); // truncates file if exists
             DataOutputStream localModelBinaryWriter = new DataOutputStream(localModelOutputStream);
@@ -145,8 +143,10 @@ public class LinearBackoffInterpolationModel implements BaseModel {
             );
         }
         catch (IOException ex) {
-            LogUtil.LogError(this.getClass().getName(), "Error in async server predict", ex);
+            LogUtil.LogError(this.getClass().getName(), "Error in disposing model: cannot write to file.", ex);
         }
+
+        instance = null;
     }
 
     @Override public int version() {
@@ -250,8 +250,8 @@ public class LinearBackoffInterpolationModel implements BaseModel {
 
             try
             {
-                String localModelFileName = mContext.getString(R.string.model_file_name);
-                File localModelFile = new File(mContext.getFilesDir(), localModelFileName);
+                String localModelFileName = mFileName;
+                File localModelFile = new File(mFileDir, localModelFileName);
 
                 // ok if file not exists, will be created & written to on destroy
                 if (!localModelFile.exists() || localModelFile.length() == 0) {
@@ -323,9 +323,9 @@ public class LinearBackoffInterpolationModel implements BaseModel {
         /** The system calls this to perform work in the UI thread and delivers
          * the result from doInBackground() */
         protected void onPostExecute(LocalModelItemData md) {
-            model1.merge(md.model1);
-            model2.merge(md.model2);
-            model3.merge(md.model3);
+            mModel1.merge(md.model1);
+            mModel2.merge(md.model2);
+            mModel3.merge(md.model3);
             mPhraseHistory.merge(md.history);
         }
     }

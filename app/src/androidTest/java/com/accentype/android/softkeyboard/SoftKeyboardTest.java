@@ -16,10 +16,6 @@ public class SoftKeyboardTest extends ServiceTestCase<SoftKeyboard> {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-
-        Intent startIntent = new Intent();
-        startIntent.setClass(getContext(), SoftKeyboard.class);
-        startService(startIntent);
     }
 
     /**

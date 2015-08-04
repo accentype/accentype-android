@@ -24,13 +24,19 @@ public class LookupModel implements BaseModel {
     private FileOutputStream mLocalModelOutputStream;
     private static LookupModel instance = null;
 
-    protected LookupModel(Context context) {
-        new LoadFromFile(context).execute();
+    private String mFileName;
+    private String mFileDir;
+
+    protected LookupModel(String fileName, String fileDir) {
+        mFileName = fileName;
+        mFileDir = fileDir;
+
+        new LoadFromFile().execute();
     }
 
-    public static LookupModel getInstance(Context context) {
+    public static LookupModel getInstance(String fileName, String fileDir) {
         if(instance == null) {
-            instance = new LookupModel(context);
+            instance = new LookupModel(fileName, fileDir);
         }
         return instance;
     }
@@ -134,12 +140,6 @@ public class LookupModel implements BaseModel {
     @Override public void dispose() {}
 
     private class LoadFromFile extends AsyncTask<Void, Void, HashMap<Integer, HashMap<String, LocalModelItemData>>> {
-        private Context mContext;
-
-        public LoadFromFile(Context context) {
-            mContext = context;
-        }
-
         /** The system calls this to perform work in a worker thread and
          * delivers it the parameters given to AsyncTask.execute() */
         protected HashMap<Integer, HashMap<String, LocalModelItemData>> doInBackground(Void... params) {
@@ -147,8 +147,8 @@ public class LookupModel implements BaseModel {
 
             try
             {
-                String localModelFileName = mContext.getString(R.string.model_file_name);
-                File localModelFile = new File(mContext.getFilesDir(), localModelFileName);
+                String localModelFileName = mFileName;
+                File localModelFile = new File(mFileDir, localModelFileName);
 
                 mLocalModelOutputStream = new FileOutputStream(localModelFile);
                 mLocalModelBinaryWriter = new DataOutputStream(mLocalModelOutputStream);

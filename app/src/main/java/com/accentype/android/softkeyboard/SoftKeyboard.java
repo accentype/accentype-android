@@ -132,7 +132,9 @@ public class SoftKeyboard extends InputMethodService
         // SharedPreferences for settings
         mSettings = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
-        mLocalModel = ModelFactory.create(ModelVersion.LINEAR_BACKOFF_INTERPOLATION, this);
+        mLocalModel = ModelFactory.create(ModelVersion.LINEAR_BACKOFF_INTERPOLATION,
+            getString(R.string.model_file_name),
+            getFilesDir().getPath());
 
         mDictionaryEN = DictionaryEN.getInstance(getResources().openRawResource(R.raw.dict_en_10000));
         mDictionaryVN = DictionaryVN.getInstance(getResources().openRawResource(R.raw.dict_vn));
