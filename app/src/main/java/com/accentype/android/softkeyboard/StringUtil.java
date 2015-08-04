@@ -2,30 +2,31 @@ package com.accentype.android.softkeyboard;
 
 public class StringUtil {
     /**
-     * Normalize cases for the query string w.r.t the original while preserving white-spaces in the original,
-     * where each dot in the query means to skip a non-whitespace character. The string to return
-     * has length = minLength(original, query), so it can be truncated if query is longer than original.
-     * Example: original = "hello World", query = ".....werl", result = "..... Werl".
+     * Replace a portion of a string with another specified string while preserving white-spaces
+     * & cases in the original. Each dot in the replace string means to skip a non-whitespace
+     * character. The string to return has length = length(original), however original & query
+     * needs not be the same length. Example: original = "hello World", replace = ".....werl",
+     * result = "hello Werld".
      *
      * @param original the original string.
-     * @param query the query string.
-     * @return new string copied from query while preserving cases that are in original.
+     * @param replace the string to replace in the original string.
+     * @return a modified string that preserves cases & whitespaces in the original string.
      */
-    public static String normalizeStringCaseDottedTruncate(String original, StringBuilder query) {
+    public static String replaceDottedPreserveCase(String original, StringBuilder replace) {
         StringBuilder sbOriginal = new StringBuilder(original);
         int j = 0;
-        for (int i = 0; i < sbOriginal.length() && j < query.length(); i++) {
+        for (int i = 0; i < sbOriginal.length() && j < replace.length(); i++) {
             char c = sbOriginal.charAt(i);
             if (Character.isWhitespace(c)) {
                 continue;
             }
-            char p = query.charAt(j);
+            char p = replace.charAt(j);
             if (p != '.') {
                 if (Character.isUpperCase(c)) {
-                    sbOriginal.setCharAt(i, Character.toUpperCase(query.charAt(j)));
+                    sbOriginal.setCharAt(i, Character.toUpperCase(replace.charAt(j)));
                 }
                 else {
-                    sbOriginal.setCharAt(i, query.charAt(j));
+                    sbOriginal.setCharAt(i, replace.charAt(j));
                 }
             }
             j++;

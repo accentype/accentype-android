@@ -56,7 +56,7 @@ public class LinearBackoffInterpolationModel implements BaseModel {
 
         // for single-word query, take most likely
         if (words.length == 1) {
-            HashMap<String, Short> accentsCountMap = model1.get(words[0]);
+            HashMap<String, Short> accentsCountMap = model1.lookup(new Phrase(words[0]));
             if (accentsCountMap == null) {
                 return null;
             }
@@ -72,7 +72,7 @@ public class LinearBackoffInterpolationModel implements BaseModel {
                 return null;
             }
             sbPredictions.append(bestGuess);
-            return StringUtil.normalizeStringCaseDottedTruncate(rawPhrase, sbPredictions);
+            return StringUtil.replaceDottedPreserveCase(rawPhrase, sbPredictions);
         }
         else {
             boolean hasPredictions = false;

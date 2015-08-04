@@ -1016,40 +1016,86 @@ public class SoftKeyboard extends InputMethodService
         /** The system calls this to perform work in a worker thread and
          * delivers it the parameters given to AsyncTask.execute() */
         protected PredictionData doInBackground(String... composing) {
-            String query = composing[0];
-            String[][] choices = predict(query);
+            try {
+                String query = composing[0];
+                String[][] choices = predict(query);
 
-            String localPrediction = mLocalModel.predict(composing[0]);
+                String localPrediction = mLocalModel.predict(composing[0]);
 
-            if (choices != null) {
-                List<String> predictions;
-                if (choices.length < 10) // if query is less than 10 words
-                {
-                    int[] bins = new int[choices.length + 1];
-                    int totalChoices = 1;
-                    for (int i = 0; i < choices.length; i++) {
-                        bins[i] = totalChoices;
-                        totalChoices *= choices[i].length;
-                        bins[i + 1] = totalChoices;
+                if (choices != null) {
+                    List<String> predictions;
+                    if (choices.length < 10) // if query is less than 10 words
+                    {
+                        int[] bins = new int[choices.length + 1];
+                        int totalChoices = 1;
+                        for (int i = 0; i < choices.length; i++) {
+                            bins[i] = totalChoices;
+                            totalChoices *= choices[i].length;
+                            bins[i + 1] = totalChoices;
+                        }
+                        // max number of predictions to display
+                        int maxNumPredictions = choices.length < 3 ? 10 : 5;
+                        int numPredictions = Math.min(maxNumPredictions, totalChoices);
+
+                        predictions = new ArrayList<>(numPredictions);
+                        if (localPrediction != null) {
+                            predictions.add(localPrediction);
+                        }
+
+                        for (int p = 0; p < numPredictions; p++) {
+                            StringBuilder prediction = new StringBuilder(query);
+                            int q = 0;
+                            for (int i = 0; i < choices.length; i++) {
+                                int ind = (p % bins[i + 1]) / bins[i];
+                                String choice = choices[i][ind];
+                                if (q >= prediction.length()) {
+                                    break;
+                                }
+                                while (Character.isWhitespace(prediction.charAt(q)))
+                                {
+                                    q++;
+                                }
+                                prediction.replace(q, q + choice.length(), choice);
+                                q += choice.length();
+                            }
+                            String predictionString = prediction.toString();
+                            if (!predictions.contains(predictionString)) {
+                                predictions.add(predictionString);
+                            }
+
+                            // If single-word query, fill suggestions from dictionary regardless of max
+                            if (choices.length == 1) {
+                                String[] dictPredictions = mDictionaryVN.get(query);
+                                if (dictPredictions != null) {
+                                    for (String suggestion : dictPredictions) {
+                                        String normalizedSuggestion = replaceKeepingWhiteSpace(composing[0], suggestion);
+                                        if (normalizedSuggestion != null && !predictions.contains(normalizedSuggestion)) {
+                                            predictions.add(normalizedSuggestion);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (localPrediction != null && predictions.size() >= 2) {
+                            String normalizedPrediction = StringUtil.replaceDottedPreserveCase(
+                                    predictions.get(1),
+                                    new StringBuilder(predictions.get(0))
+                            );
+                            if (normalizedPrediction.equals(predictions.get(1))) {
+                                // if normalized prediction is same as server prediction then remove it from list
+                                predictions.remove(0);
+                            }
+                            else {
+                                predictions.set(0, normalizedPrediction);
+                            }
+                        }
                     }
-                    // max number of predictions to display
-                    int maxNumPredictions = choices.length < 3 ? 10 : 5;
-                    int numPredictions = Math.min(maxNumPredictions, totalChoices);
-
-                    predictions = new ArrayList<>(numPredictions);
-                    if (localPrediction != null) {
-                        predictions.add(localPrediction);
-                    }
-
-                    for (int p = 0; p < numPredictions; p++) {
+                    else
+                    {
                         StringBuilder prediction = new StringBuilder(query);
                         int q = 0;
                         for (int i = 0; i < choices.length; i++) {
-                            int ind = (p % bins[i + 1]) / bins[i];
-                            String choice = choices[i][ind];
-                            if (q >= prediction.length()) {
-                                break;
-                            }
+                            String choice = choices[i][0];
                             while (Character.isWhitespace(prediction.charAt(q)))
                             {
                                 q++;
@@ -1057,63 +1103,28 @@ public class SoftKeyboard extends InputMethodService
                             prediction.replace(q, q + choice.length(), choice);
                             q += choice.length();
                         }
-                        String predictionString = prediction.toString();
-                        if (!predictions.contains(predictionString)) {
-                            predictions.add(predictionString);
-                        }
-
-                        // If single-word query, fill suggestions from dictionary regardless of max
-                        if (choices.length == 1) {
-                            String[] dictPredictions = mDictionaryVN.get(query);
-                            if (dictPredictions != null) {
-                                for (String suggestion : dictPredictions) {
-                                    String normalizedSuggestion = replaceKeepingWhiteSpace(composing[0], suggestion);
-                                    if (normalizedSuggestion != null && !predictions.contains(normalizedSuggestion)) {
-                                        predictions.add(normalizedSuggestion);
-                                    }
-                                }
+                        predictions = new ArrayList<>(2);
+                        if (localPrediction != null) {
+                            String normalizedPrediction = StringUtil.replaceDottedPreserveCase(
+                                prediction.toString(),
+                                new StringBuilder(localPrediction)
+                            );
+                            if (!normalizedPrediction.equals(prediction.toString())) {
+                                predictions.add(normalizedPrediction);
                             }
                         }
+                        predictions.add(prediction.toString());
                     }
-                    if (localPrediction != null && predictions.size() >= 2) {
-                        String normalizedPrediction = StringUtil.normalizeStringCaseDottedTruncate(
-                                predictions.get(1),
-                                new StringBuilder(predictions.get(0))
-                        );
-                        if (normalizedPrediction.equals(predictions.get(1))) {
-                            // if normalized prediction is same as server prediction then remove it from list
-                            predictions.remove(0);
-                        }
-                        else {
-                            predictions.set(0, normalizedPrediction);
-                        }
-                    }
-                }
-                else
-                {
-                    StringBuilder prediction = new StringBuilder(query);
-                    int q = 0;
-                    for (int i = 0; i < choices.length; i++) {
-                        String choice = choices[i][0];
-                        while (Character.isWhitespace(prediction.charAt(q)))
-                        {
-                            q++;
-                        }
-                        prediction.replace(q, q + choice.length(), choice);
-                        q += choice.length();
-                    }
-                    predictions = new ArrayList<>(1);
-                    if (localPrediction != null) {
-                        predictions.add(localPrediction);
-                    }
-                    predictions.add(prediction.toString());
-                }
 
-                PredictionData data = new PredictionData();
-                data.Predictions = predictions;
-                data.WordChoices = choices;
+                    PredictionData data = new PredictionData();
+                    data.Predictions = predictions;
+                    data.WordChoices = choices;
 
-                return data;
+                    return data;
+                }
+            }
+            catch (Exception ex) {
+                LogUtil.LogError(this.getClass().getName(), "Failed to predict in background", ex);
             }
             return null;
         }
