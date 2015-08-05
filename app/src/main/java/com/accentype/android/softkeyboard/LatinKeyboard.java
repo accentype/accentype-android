@@ -41,6 +41,10 @@ public class LatinKeyboard extends Keyboard {
      */
     private Key mCancelKey;
     /**
+     * Stores the current state of the comma key.
+     */
+    private Key mCommaKey;
+    /**
      * Stores the current state of the language switch key (a.k.a. globe key). This should be
      * visible while {@link InputMethodManager#shouldOfferSwitchingToNextInputMethod(IBinder)}
      * returns true. When this key becomes invisible, its width will be shrunk to zero.
@@ -72,6 +76,12 @@ public class LatinKeyboard extends Keyboard {
      */
     private Key mSavedCancelKey;
 
+    /**
+     * Stores the current state of the comma key. This should be immutable and will be used only as a
+     * reference size when the visibility of {@link #mCancelKey} is changed.
+     */
+    private Key mSavedCommaKey;
+
     static final int LANGUAGE_VN = 0;
     static final int LANGUAGE_EN = 1;
 
@@ -102,6 +112,9 @@ public class LatinKeyboard extends Keyboard {
         } else if (key.codes[0] == Keyboard.KEYCODE_CANCEL) {
             mCancelKey = key;
             mSavedCancelKey = new LatinKey(res, parent, x, y, parser);
+        } else if (key.codes[0] == 44) { // comma
+            mCommaKey = key;
+            mSavedCommaKey = new LatinKey(res, parent, x, y, parser);
         }
         return key;
     }
@@ -145,20 +158,22 @@ public class LatinKeyboard extends Keyboard {
             // The cancel key should be visible. Restore the size of the space key
             // and language switch key and mode change key using the saved layout.
             mModeChangeKey.x = mSavedModeChangeKey.x;
-            if (!isLanguageSwitchKeyVisible) {
+            if (!isLanguageSwitchKeyVisible) { // [Cancel] [123] [,] [_____] [.]
                 mLanguageSwitchKey.width = 0;
                 mLanguageSwitchKey.icon = null;
                 mLanguageSwitchKey.iconPreview = null;
                 mSpaceKey.width = mSavedSpaceKey.width + mSavedLanguageSwitchKey.width;
                 mSpaceKey.x = mSavedSpaceKey.x - mSavedLanguageSwitchKey.width;
+                mCommaKey.x = mSavedCancelKey.width + mSavedModeChangeKey.width;
             }
-            else {
+            else { // [Cancel] [123] [VN] [,] [_____] [.]
                 mLanguageSwitchKey.x = mSavedLanguageSwitchKey.x;
                 mLanguageSwitchKey.width = mSavedLanguageSwitchKey.width;
                 mLanguageSwitchKey.icon = mSavedLanguageSwitchKey.icon;
                 mLanguageSwitchKey.iconPreview = mSavedLanguageSwitchKey.iconPreview;
                 mSpaceKey.width = mSavedSpaceKey.width;
                 mSpaceKey.x = mSavedSpaceKey.x;
+                mCommaKey.x = mSavedCommaKey.x;
             }
             mCancelKey.width = mSavedCancelKey.width;
             mCancelKey.x = mSavedCancelKey.x;
@@ -168,20 +183,22 @@ public class LatinKeyboard extends Keyboard {
             // The cancel key should be hidden. Change the width of the space key
             // to fill the space of the cancel key so that the user will not see any strange gap.
             mModeChangeKey.x = mSavedModeChangeKey.x - mSavedCancelKey.width;
-            if (!isLanguageSwitchKeyVisible) {
+            if (!isLanguageSwitchKeyVisible) { // [123] [,] [_____] [.]
                 mLanguageSwitchKey.width = 0;
                 mLanguageSwitchKey.icon = null;
                 mLanguageSwitchKey.iconPreview = null;
                 mSpaceKey.width = mSavedSpaceKey.width + mSavedCancelKey.width + mSavedLanguageSwitchKey.width;
                 mSpaceKey.x = mSavedSpaceKey.x - mSavedCancelKey.width - mSavedLanguageSwitchKey.width;
+                mCommaKey.x = mSavedModeChangeKey.width;
             }
-            else {
+            else { // [123] [VN] [,] [_____] [.]
                 mLanguageSwitchKey.x = mSavedLanguageSwitchKey.x - mSavedCancelKey.width;
                 mLanguageSwitchKey.width = mSavedLanguageSwitchKey.width;
                 mLanguageSwitchKey.icon = mSavedLanguageSwitchKey.icon;
                 mLanguageSwitchKey.iconPreview = mSavedLanguageSwitchKey.iconPreview;
                 mSpaceKey.width = mSavedSpaceKey.width + mSavedCancelKey.width;
                 mSpaceKey.x = mSavedSpaceKey.x - mSavedCancelKey.width;
+                mCommaKey.x = mSavedModeChangeKey.width + mSavedLanguageSwitchKey.width;
             }
             mCancelKey.width = 0;
             mCancelKey.icon = null;
