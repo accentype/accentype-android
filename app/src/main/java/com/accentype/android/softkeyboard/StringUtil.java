@@ -55,4 +55,30 @@ public class StringUtil {
         }
         return sbNormalized.toString();
     }
+
+    /**
+     * Replaces portion of string starting from the first non-whitespace character
+     * with the specified string.
+     *
+     * @param original
+     *            the original string.
+     * @param newString
+     *            the replacement string.
+     * @return new string containing the replacement string.
+     */
+    public static String replaceKeepingWhiteSpace(String original, String newString) {
+        StringBuilder sb = new StringBuilder(original);
+        int start;
+        for (start = 0; start < original.length(); start++) {
+            if (!Character.isWhitespace(original.charAt(start))) {
+                break;
+            }
+        }
+        int end = start + newString.length();
+        if (end > original.length()) {
+            return null;
+        }
+        sb.replace(start, end, newString);
+        return sb.toString();
+    }
 }

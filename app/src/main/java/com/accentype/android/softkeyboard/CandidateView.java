@@ -119,49 +119,6 @@ public class CandidateView extends View {
                 invalidate();
                 return true;
             }
-
-            @Override
-            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
-            {
-                // Already displaying secondary suggestions so flinging should do nothing
-                // Or if this is a single-word query, in that case all choices should already be shown
-                if (mSecondarySuggestions != null ||
-                    (mWordChoices != null && mWordChoices.length == 1)) {
-                    return false;
-                }
-                if (velocityY > 100 && mWordChoices != null)
-                {
-                    TouchLocation touchLocation = getWordIndexBasedOnTouchPosition(e1.getX() + getScrollX());
-
-                    int iWord = touchLocation.WordIndex;
-                    if (iWord < 0) {
-                        return false;
-                    }
-                    String[] additionalChoices = mDictionary.get(mComposing, iWord);
-                    mSecondarySuggestions = new ArrayList<>(Arrays.asList(mWordChoices[iWord]));
-                    if (additionalChoices != null) {
-                        for (int k = 0; k < additionalChoices.length; k++) {
-                            if (!mSecondarySuggestions.contains(additionalChoices[k]))
-                            {
-                                mSecondarySuggestions.add(additionalChoices[k]);
-                            }
-                        }
-                    }
-
-                    mFlingSuggestionIndex = touchLocation.SuggestionIndex;
-                    mFlingWordIndex = iWord;
-
-                    scrollTo(0, 0);
-                    mTargetScrollX = 0;
-                    // Compute the total width
-                    internalDraw(null);
-                    invalidate();
-                    requestLayout();
-
-                    return true;
-                }
-                return false;
-            }
         });
         setHorizontalFadingEdgeEnabled(true);
         setWillNotDraw(false);
@@ -222,7 +179,20 @@ public class CandidateView extends View {
         }
         int x = 0;
         boolean showingSecondarySuggestions = mSecondarySuggestions != null;
-        List<String> suggestions = showingSecondarySuggestions ? mSecondarySuggestions : mSuggestions;
+
+        List<String> suggestions;
+        if (showingSecondarySuggestions) {
+            suggestions = mSecondarySuggestions;
+        }
+        else {
+            if(mSuggestions != null && mSuggestions.size() > 0) {
+                suggestions = Arrays.asList(mSuggestions.get(0).trim().split("\\s+"));
+            }
+            else {
+                suggestions = new ArrayList<>();
+            }
+        }
+
         final int count = Math.min(MAX_SUGGESTIONS, suggestions.size());
         final int height = getHeight();
         final Rect bgPadding = mBgPadding;
@@ -252,16 +222,31 @@ public class CandidateView extends View {
             }
 
             if (canvas != null) {
-                if ((i == 1 && !typedWordValid) || (i == 0 && typedWordValid)) {
-                    paint.setFakeBoldText(true);
-                    paint.setColor(showingSecondarySuggestions ? mColorSecondaryRecommended : mColorRecommended);
-                } else if (i != 0) {
-                    paint.setColor(mColorOther);
+                int textColor;
+                int verticalBarTop;
+                int verticalBarBottom;
+                if (showingSecondarySuggestions) {
+                    if (i == 0) {
+                        paint.setFakeBoldText(true);
+                        textColor = mColorSecondaryRecommended;
+                    }
+                    else {
+                        textColor = mColorOther;
+                    }
+                    verticalBarTop = bgPadding.top;
+                    verticalBarBottom = height + 1;
                 }
+                else {
+                    paint.setFakeBoldText(true);
+                    textColor = mColorRecommended;
+                    verticalBarTop = (int)(y - mPaint.getTextSize() / 2);
+                    verticalBarBottom = y + 1;
+                }
+                paint.setColor(textColor);
                 canvas.drawText(suggestion, x + X_GAP, y, paint);
                 paint.setColor(mColorOther); 
-                canvas.drawLine(x + wordWidth + 0.5f, bgPadding.top, 
-                        x + wordWidth + 0.5f, height + 1, paint);
+                canvas.drawLine(x + wordWidth + 0.5f, verticalBarTop,
+                        x + wordWidth + 0.5f, verticalBarBottom, paint);
                 paint.setFakeBoldText(false);
             }
             x += wordWidth;
@@ -359,7 +344,7 @@ public class CandidateView extends View {
                         pickSecondarySuggestionsManually(mSelectedIndex);
                     }
                     else {
-                        mService.pickSuggestionManually(mSelectedIndex);
+                        showSecondarySuggestions(mSelectedIndex);
                     }
                     mSelectedIndex = -1;
                 }
@@ -373,7 +358,7 @@ public class CandidateView extends View {
                         pickSecondarySuggestionsManually(mSelectedIndex);
                     }
                     else {
-                        mService.pickSuggestionManually(mSelectedIndex);
+                        showSecondarySuggestions(mSelectedIndex);
                     }
                 }
             }
@@ -450,6 +435,29 @@ public class CandidateView extends View {
     private void removeHighlight() {
         mTouchX = OUT_OF_BOUNDS;
         invalidate();
+    }
+
+    private void showSecondarySuggestions(int iWord) {
+        String[] additionalChoices = mDictionary.get(mComposing, iWord);
+        mSecondarySuggestions = new ArrayList<>(Arrays.asList(mWordChoices[iWord]));
+        if (additionalChoices != null) {
+            for (int k = 0; k < additionalChoices.length; k++) {
+                if (!mSecondarySuggestions.contains(additionalChoices[k]))
+                {
+                    mSecondarySuggestions.add(additionalChoices[k]);
+                }
+            }
+        }
+
+        mFlingSuggestionIndex = 0;
+        mFlingWordIndex = iWord;
+
+        scrollTo(0, 0);
+        mTargetScrollX = 0;
+        // Compute the total width
+        internalDraw(null);
+        invalidate();
+        requestLayout();
     }
 
     private TouchLocation getWordIndexBasedOnTouchPosition(float touchX) {
