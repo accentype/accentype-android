@@ -416,7 +416,7 @@ public class CandidateView extends View {
             }
         }
 
-        mService.updateComposingText(suggestion.toString());
+        mService.updateComposingTextFromUserCorrections(suggestion.toString());
 
         mSecondarySuggestions = null;
 

@@ -79,6 +79,7 @@ public class SoftKeyboard extends InputMethodService
     private CompletionInfo[] mCompletions;
 
     private StringBuilder mComposing = new StringBuilder();
+    private boolean mUserMadeCorrection = false;
     private BaseModel mLocalModel;
     private List<String> mPredictions;
     private String[][] mWordChoices;
@@ -212,6 +213,7 @@ public class SoftKeyboard extends InputMethodService
         // Reset our state.  We want to do this even if restarting, because
         // the underlying state of the text editor could have changed in any way.
         mComposing.setLength(0);
+        mUserMadeCorrection = false;
         resetServerPredictions();
         updateCandidates();
 
@@ -301,8 +303,14 @@ public class SoftKeyboard extends InputMethodService
     @Override public void onFinishInput() {
         super.onFinishInput();
 
+        // user could navigate to a different text field, in which case let's learn
+        // what has been typed so far. This could be noisy, but the right choices will
+        // dominate.
+        learn();
+
         // Clear current composing text and candidates.
         mComposing.setLength(0);
+        mUserMadeCorrection = false;
         resetServerPredictions();
         updateCandidates();
 
@@ -338,7 +346,15 @@ public class SoftKeyboard extends InputMethodService
         // clear whatever candidate text we have.
         if (mComposing.length() > 0 && (newSelStart != candidatesEnd
                 || newSelEnd != candidatesEnd)) {
+
+            // this is usually triggered when user interacts with the containing app
+            // in some way that causes the composing text to be committed. For example,
+            // clicking search in google search bar would commit the text. Thus there
+            // could be some valuable info to learn.
+            learn();
+
             mComposing.setLength(0);
+            mUserMadeCorrection = false;
             resetServerPredictions();
             updateCandidates();
             InputConnection ic = getCurrentInputConnection();
@@ -520,6 +536,7 @@ public class SoftKeyboard extends InputMethodService
                 inputConnection.commitText(mComposing, 1);
             }
             mComposing.setLength(0);
+            mUserMadeCorrection = false;
             resetServerPredictions();
             updateCandidates();
         }
@@ -716,6 +733,18 @@ public class SoftKeyboard extends InputMethodService
         updateCandidates();
     }
 
+    private void learn() {
+        // only learn in VN mode for now and only if user has made correction, otherwise
+        // the current composing text is either already correct or might be accidentally committed
+        if (getLanguageCode() == LatinKeyboard.LANGUAGE_VN && mUserMadeCorrection) {
+            List<String> suggestions = mCandidateView != null ? mCandidateView.getSuggestions() : mPredictions;
+            if (suggestions != null && suggestions.size() > 0) {
+                String prediction = suggestions.get(0);
+                mLocalModel.learn(mComposing.toString(), prediction);
+            }
+        }
+    }
+
     /**
      * Update internal prediction values & candidate suggestions for EN language.
      * EN predictions are just auto-completions so this method directly updates
@@ -779,6 +808,7 @@ public class SoftKeyboard extends InputMethodService
             }
         } else if (length > 0) {
             mComposing.setLength(0);
+            mUserMadeCorrection = false;
             // this clears internal prediction values so we can
             // call it regardless of the current language mode
             resetServerPredictions();
@@ -975,9 +1005,10 @@ public class SoftKeyboard extends InputMethodService
         }
     }
 
-    public void updateComposingText(String text) {
+    public void updateComposingTextFromUserCorrections(String text) {
         if (text != null) {
             getCurrentInputConnection().setComposingText(text, 1);
+            mUserMadeCorrection = true;
         }
     }
 
