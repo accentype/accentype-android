@@ -957,7 +957,7 @@ public class SoftKeyboard extends InputMethodService
         }
     }
 
-    private int getLanguageCode() {
+    public int getLanguageCode() {
         int defaultLanguageCode = LatinKeyboard.LANGUAGE_VN;
         if (mSharedPreferences != null) {
             return mSharedPreferences.getInt(getString(R.string.preference_saved_language), defaultLanguageCode);

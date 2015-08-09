@@ -180,18 +180,23 @@ public class CandidateView extends View {
         int x = 0;
         boolean showingSecondarySuggestions = mSecondarySuggestions != null;
 
-        List<String> suggestions;
-        if (showingSecondarySuggestions) {
-            suggestions = mSecondarySuggestions;
+        int languageMode = mService.getLanguageCode();
+
+        List<String> suggestions = new ArrayList<>();
+        switch (languageMode) {
+            case LatinKeyboard.LANGUAGE_EN:
+                suggestions = mSuggestions;
+                break;
+            case LatinKeyboard.LANGUAGE_VN:
+                if (showingSecondarySuggestions) {
+                    suggestions = mSecondarySuggestions;
+                }
+                else if(mSuggestions != null && mSuggestions.size() > 0) {
+                    suggestions = Arrays.asList(mSuggestions.get(0).trim().split("\\s+"));
+                }
+                break;
         }
-        else {
-            if(mSuggestions != null && mSuggestions.size() > 0) {
-                suggestions = Arrays.asList(mSuggestions.get(0).trim().split("\\s+"));
-            }
-            else {
-                suggestions = new ArrayList<>();
-            }
-        }
+
 
         final int count = Math.min(MAX_SUGGESTIONS, suggestions.size());
         final int height = getHeight();
@@ -344,7 +349,7 @@ public class CandidateView extends View {
                         pickSecondarySuggestionsManually(mSelectedIndex);
                     }
                     else {
-                        showSecondarySuggestions(mSelectedIndex);
+                        pickPrimarySuggestionsManually(mSelectedIndex);
                     }
                     mSelectedIndex = -1;
                 }
@@ -358,7 +363,7 @@ public class CandidateView extends View {
                         pickSecondarySuggestionsManually(mSelectedIndex);
                     }
                     else {
-                        showSecondarySuggestions(mSelectedIndex);
+                        pickPrimarySuggestionsManually(mSelectedIndex);
                     }
                 }
             }
@@ -383,6 +388,17 @@ public class CandidateView extends View {
             mService.pickSuggestionManually(mSelectedIndex);
         }
         invalidate();
+    }
+
+    private void pickPrimarySuggestionsManually(int index) {
+        switch (mService.getLanguageCode()) {
+            case LatinKeyboard.LANGUAGE_VN:
+                showSecondarySuggestions(index);
+                break;
+            case LatinKeyboard.LANGUAGE_EN:
+                mService.pickSuggestionManually(index);
+                break;
+        }
     }
 
     private void pickSecondarySuggestionsManually(int index) {
