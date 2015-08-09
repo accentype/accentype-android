@@ -79,12 +79,11 @@ public class SoftKeyboard extends InputMethodService
     private CompletionInfo[] mCompletions;
 
     private StringBuilder mComposing = new StringBuilder();
-    private boolean mUserMadeCorrection = false;
+    private String mUserComposing = "";
     private BaseModel mLocalModel;
     private List<String> mPredictions;
     private String[][] mWordChoices;
     private DictionaryEN mDictionaryEN;
-    private DictionaryVN mDictionaryVN;
     private boolean mPredictionOn;
     private boolean mCompletionOn;
     private int mLastDisplayWidth;
@@ -134,11 +133,10 @@ public class SoftKeyboard extends InputMethodService
         mSettings = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
         mLocalModel = ModelFactory.create(ModelVersion.LINEAR_BACKOFF_INTERPOLATION,
-            getString(R.string.model_file_name),
-            getFilesDir().getPath());
+                getString(R.string.model_file_name),
+                getFilesDir().getPath());
 
         mDictionaryEN = DictionaryEN.getInstance(getResources().openRawResource(R.raw.dict_en_10000));
-        mDictionaryVN = DictionaryVN.getInstance(getResources().openRawResource(R.raw.dict_vn));
     }
 
     /**
@@ -213,7 +211,7 @@ public class SoftKeyboard extends InputMethodService
         // Reset our state.  We want to do this even if restarting, because
         // the underlying state of the text editor could have changed in any way.
         mComposing.setLength(0);
-        mUserMadeCorrection = false;
+        mUserComposing = "";
         resetServerPredictions();
         updateCandidates();
 
@@ -310,7 +308,7 @@ public class SoftKeyboard extends InputMethodService
 
         // Clear current composing text and candidates.
         mComposing.setLength(0);
-        mUserMadeCorrection = false;
+        mUserComposing = "";
         resetServerPredictions();
         updateCandidates();
 
@@ -354,7 +352,7 @@ public class SoftKeyboard extends InputMethodService
             learn();
 
             mComposing.setLength(0);
-            mUserMadeCorrection = false;
+            mUserComposing = "";
             resetServerPredictions();
             updateCandidates();
             InputConnection ic = getCurrentInputConnection();
@@ -536,7 +534,7 @@ public class SoftKeyboard extends InputMethodService
                 inputConnection.commitText(mComposing, 1);
             }
             mComposing.setLength(0);
-            mUserMadeCorrection = false;
+            mUserComposing = "";
             resetServerPredictions();
             updateCandidates();
         }
@@ -729,14 +727,14 @@ public class SoftKeyboard extends InputMethodService
         }
         if (!mGotServerPrediction.get()) {
             getCurrentInputConnection().setComposingText(mComposing, 1);
+            updateCandidates();
         }
-        updateCandidates();
     }
 
     private void learn() {
         // only learn in VN mode for now and only if user has made correction, otherwise
         // the current composing text is either already correct or might be accidentally committed
-        if (getLanguageCode() == LatinKeyboard.LANGUAGE_VN && mUserMadeCorrection) {
+        if (getLanguageCode() == LatinKeyboard.LANGUAGE_VN && mUserComposing.length() > 0) {
             List<String> suggestions = mCandidateView != null ? mCandidateView.getSuggestions() : mPredictions;
             if (suggestions != null && suggestions.size() > 0) {
                 String prediction = suggestions.get(0);
@@ -808,7 +806,7 @@ public class SoftKeyboard extends InputMethodService
             }
         } else if (length > 0) {
             mComposing.setLength(0);
-            mUserMadeCorrection = false;
+            mUserComposing = "";
             // this clears internal prediction values so we can
             // call it regardless of the current language mode
             resetServerPredictions();
@@ -1008,7 +1006,7 @@ public class SoftKeyboard extends InputMethodService
     public void updateComposingTextFromUserCorrections(String text) {
         if (text != null) {
             getCurrentInputConnection().setComposingText(text, 1);
-            mUserMadeCorrection = true;
+            mUserComposing = text;
         }
     }
 
@@ -1083,6 +1081,10 @@ public class SoftKeyboard extends InputMethodService
                     }
                     else {
                         predictions.add(predictionString);
+                    }
+
+                    if (mUserComposing.length() > 0) {
+                        predictions.set(0, StringUtil.normalizeByWords(predictions.get(0), mUserComposing));
                     }
 
                     PredictionData data = new PredictionData();

@@ -81,4 +81,26 @@ public class StringUtil {
         sb.replace(start, end, newString);
         return sb.toString();
     }
+
+    public static String normalizeByWords(String query, String norm) {
+        int minLength = Math.min(query.length(), norm.length());
+        int lastWordBoundary = -1;
+
+        for (int i = 0; i < minLength; i++) {
+            char q = query.charAt(i);
+            char n = norm.charAt(i);
+            if (LanguageConstruct.AccentToRawMap.get(q) !=
+                LanguageConstruct.AccentToRawMap.get(n)) {
+                break;
+            }
+            if (Character.isWhitespace(q) || i == minLength - 1) {
+                lastWordBoundary = i;
+            }
+        }
+        StringBuilder normalized = new StringBuilder(query);
+        if (lastWordBoundary != -1) {
+            normalized = normalized.replace(0, lastWordBoundary + 1, norm.substring(0, lastWordBoundary + 1));
+        }
+        return normalized.toString();
+    }
 }
