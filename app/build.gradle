@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.accentype.android.softkeyboard"
-        versionCode 10
+        versionCode 11
         versionName "1.0"
         minSdkVersion 3
         targetSdkVersion 21
