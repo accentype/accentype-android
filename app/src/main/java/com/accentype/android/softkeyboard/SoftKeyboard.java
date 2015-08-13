@@ -79,7 +79,10 @@ public class SoftKeyboard extends InputMethodService
     private CompletionInfo[] mCompletions;
 
     private StringBuilder mComposing = new StringBuilder();
+
+    // Keep track of the last composing text that was manually corrected by user
     private String mUserComposing = "";
+
     private BaseModel mLocalModel;
     private List<String> mPredictions;
     private String[][] mWordChoices;
@@ -108,6 +111,7 @@ public class SoftKeyboard extends InputMethodService
     private AtomicBoolean mGotServerPrediction = new AtomicBoolean(false);
     private Semaphore mPredictionSemaphore = new Semaphore(1);
 
+    // Request ID is used to make sure server prediction response matches the latest request.
     private AtomicInteger mRequestId = new AtomicInteger();
     private static final int mMaxRequestId = 65535;
 
@@ -211,7 +215,6 @@ public class SoftKeyboard extends InputMethodService
         // Reset our state.  We want to do this even if restarting, because
         // the underlying state of the text editor could have changed in any way.
         mComposing.setLength(0);
-        mUserComposing = "";
         resetServerPredictions();
         updateCandidates();
 
@@ -308,7 +311,6 @@ public class SoftKeyboard extends InputMethodService
 
         // Clear current composing text and candidates.
         mComposing.setLength(0);
-        mUserComposing = "";
         resetServerPredictions();
         updateCandidates();
 
@@ -352,7 +354,6 @@ public class SoftKeyboard extends InputMethodService
             learn();
 
             mComposing.setLength(0);
-            mUserComposing = "";
             resetServerPredictions();
             updateCandidates();
             InputConnection ic = getCurrentInputConnection();
@@ -534,7 +535,6 @@ public class SoftKeyboard extends InputMethodService
                 inputConnection.commitText(mComposing, 1);
             }
             mComposing.setLength(0);
-            mUserComposing = "";
             resetServerPredictions();
             updateCandidates();
         }
@@ -708,6 +708,8 @@ public class SoftKeyboard extends InputMethodService
      * Reset local predictions with server results.
      */
     private void resetServerPredictions() {
+        mRequestId.set(0);
+        mUserComposing = "";
         mPredictions = EMPTY_LIST;
         mWordChoices = null;
         mGotServerPrediction.set(Boolean.FALSE);
@@ -806,7 +808,6 @@ public class SoftKeyboard extends InputMethodService
             }
         } else if (length > 0) {
             mComposing.setLength(0);
-            mUserComposing = "";
             // this clears internal prediction values so we can
             // call it regardless of the current language mode
             resetServerPredictions();
@@ -1089,6 +1090,7 @@ public class SoftKeyboard extends InputMethodService
 
                     PredictionData data = new PredictionData();
                     data.Predictions = predictions;
+                    data.Query = query;
                     data.WordChoices = choices;
 
                     return data;
@@ -1104,7 +1106,11 @@ public class SoftKeyboard extends InputMethodService
          * the result from doInBackground() */
         protected void onPostExecute(PredictionData predictionData) {
             mPredictionSemaphore.tryAcquire();
-            if (mPredictionOn && getLanguageCode() == LatinKeyboard.LANGUAGE_VN && predictionData != null) {
+            if (mPredictionOn &&
+                getLanguageCode() == LatinKeyboard.LANGUAGE_VN &&
+                predictionData != null &&
+                mComposing.toString().equals(predictionData.Query)
+            ) {
                 mPredictions = predictionData.Predictions;
                 mWordChoices = predictionData.WordChoices;
                 if (mPredictions != null && mPredictions.size() > 0) {
@@ -1191,6 +1197,7 @@ public class SoftKeyboard extends InputMethodService
     }
 
     private class PredictionData {
+        public String Query;
         public List<String> Predictions;
         public String[][] WordChoices;
     }
