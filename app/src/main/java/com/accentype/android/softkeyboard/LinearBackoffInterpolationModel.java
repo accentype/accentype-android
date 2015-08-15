@@ -8,7 +8,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Linear model with backoff interpolation.
@@ -25,7 +28,6 @@ public class LinearBackoffInterpolationModel implements BaseModel {
     private float beta3 = 0.2f;
     private float beta2 = 0.15f;
     private float beta1 = 0.1f;
-
 
     private String mFileName;
     private String mFileDir;
@@ -52,8 +54,11 @@ public class LinearBackoffInterpolationModel implements BaseModel {
 
         StringBuilder sbPredictions = new StringBuilder();
 
+        if (words.length == 0) {
+            return null;
+        }
         // for single-word query, take most likely
-        if (words.length == 1) {
+        else if (words.length == 1) {
             HashMap<String, Short> accentsCountMap = mModel1.lookup(new Phrase(words[0]));
             if (accentsCountMap == null) {
                 return null;
@@ -74,12 +79,17 @@ public class LinearBackoffInterpolationModel implements BaseModel {
         }
         else {
             boolean hasPredictions = false;
-            for (int i = 0; i < words.length; i++) {
+            List<String> wordMarkers = new ArrayList<>(words.length + 2);
+            wordMarkers.add(Phrase.BeginMarker);
+            wordMarkers.addAll(Arrays.asList(words));
+            wordMarkers.add(Phrase.EndMarker);
+
+            for (int i = 0; i < wordMarkers.size(); i++) {
                 HashMap<String, Double> accScoreMap = new HashMap<>();
 
                 // only look at 2-gram & 3-gram
-                ComputeAccentScore(words, i, beta3, mModel3, 3, accScoreMap);
-                ComputeAccentScore(words, i, beta2, mModel2, 2, accScoreMap);
+                ComputeAccentScore(wordMarkers, i, beta3, mModel3, 3, accScoreMap);
+                ComputeAccentScore(wordMarkers, i, beta2, mModel2, 2, accScoreMap);
 
                 String bestPrediction = null;
                 if (accScoreMap.size() > 0) {
@@ -97,7 +107,7 @@ public class LinearBackoffInterpolationModel implements BaseModel {
                     sbPredictions.append(bestPrediction);
                 }
                 else {
-                    for (int c = 0; c < words[i].length(); c++) {
+                    for (int c = 0; c < wordMarkers.get(i).length(); c++) {
                         sbPredictions.append(".");
                     }
                 }
@@ -106,12 +116,13 @@ public class LinearBackoffInterpolationModel implements BaseModel {
                 return null;
             }
             // don't normalize yet, wait until incorporating with the full prediction from server
-            return sbPredictions.toString();
+            // remove the first and last phrase markers from predictions
+            return sbPredictions.substring(1, sbPredictions.length() - 1);
         }
     }
 
     @Override public void learn(String rawPhrase, String accentPhrase) {
-        learnStatic(rawPhrase, accentPhrase, (short)1, mModel1, mModel2, mModel3, mPhraseHistory);
+        learnStatic(rawPhrase, accentPhrase, (short) 1, mModel1, mModel2, mModel3, mPhraseHistory);
     }
 
     @Override public void dispose() {
@@ -178,26 +189,36 @@ public class LinearBackoffInterpolationModel implements BaseModel {
             return;
         }
 
-        for (int i = 0; i < rawWords.length - 1; i++) {
+        List<String> rawWordMarkers = new ArrayList<>(rawWords.length + 2);
+        rawWordMarkers.add(Phrase.BeginMarker);
+        rawWordMarkers.addAll(Arrays.asList(rawWords));
+        rawWordMarkers.add(Phrase.EndMarker);
+
+        List<String> accentWordMarkers = new ArrayList<>(accentWords.length + 2);
+        accentWordMarkers.add(Phrase.BeginMarker);
+        accentWordMarkers.addAll(Arrays.asList(accentWords));
+        accentWordMarkers.add(Phrase.EndMarker);
+
+        for (int i = 0; i < rawWordMarkers.size() - 1; i++) {
             // TODO: use composite hash key instead of concatenating string with spaces
             m2.add(
-                new Phrase(rawWords[i], rawWords[i + 1]),
-                String.format("%s %s", accentWords[i], accentWords[i + 1]),
+                new Phrase(rawWordMarkers.get(i), rawWordMarkers.get(i + 1)),
+                String.format("%s %s", accentWordMarkers.get(i), accentWordMarkers.get(i + 1)),
                 count
             );
         }
 
-        for (int i = 0; i < rawWords.length - 2; i++) {
+        for (int i = 0; i < rawWordMarkers.size() - 2; i++) {
             m3.add(
-                new Phrase(rawWords[i], rawWords[i + 1], rawWords[i + 2]),
-                String.format("%s %s %s", accentWords[i], accentWords[i + 1], accentWords[i + 2]),
+                new Phrase(rawWordMarkers.get(i), rawWordMarkers.get(i + 1), rawWordMarkers.get(i + 2)),
+                String.format("%s %s %s", accentWordMarkers.get(i), accentWordMarkers.get(i + 1), accentWordMarkers.get(i + 2)),
                 count
             );
         }
     }
 
     private void ComputeAccentScore (
-        String[] words,
+        List<String> words,
         int iW,
         double weight,
         PhraseMap model,
@@ -212,12 +233,12 @@ public class LinearBackoffInterpolationModel implements BaseModel {
 
         // compute accent probability for this word
         int g3Start = Math.max(iW - g, 0);
-        int g3End = Math.min(iW + g, words.length - 1);
+        int g3End = Math.min(iW + g, words.size() - 1);
 
         for (int jW = g3Start; jW <= g3End - g; jW++) {
             Phrase segment =
-                (g == 2) ? new Phrase(words[jW], words[jW + 1], words[jW + 2]) :
-                (g == 1) ? new Phrase(words[jW], words[jW + 1]) : new Phrase(words[jW]);
+                (g == 2) ? new Phrase(words.get(jW), words.get(jW + 1), words.get(jW + 2)) :
+                (g == 1) ? new Phrase(words.get(jW), words.get(jW + 1)) : new Phrase(words.get(jW));
 
             HashMap<String, Short> accentsCountMap = model.lookup(segment);
             if (accentsCountMap == null) {

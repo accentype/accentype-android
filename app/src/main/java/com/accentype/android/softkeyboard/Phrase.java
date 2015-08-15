@@ -4,6 +4,9 @@ package com.accentype.android.softkeyboard;
  * Represents a phrase of up to three words.
  */
 public class Phrase {
+    public static final String BeginMarker = "+";
+    public static final String EndMarker = "-";
+
     private String w1 = "";
     private String w2 = "";
     private String w3 = "";

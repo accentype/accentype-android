@@ -37,10 +37,13 @@ public class LinearBackoffInterpolationModelTest extends AndroidTestCase {
         Assert.assertEquals("baogiờđi", case1);
 
         String case2 = model.predict("di choi khong the");
-        Assert.assertEquals("đichơikhông...", case2);
+        Assert.assertEquals("đichơikhôngthế", case2); // last word is learned from second example
 
         String case3 = model.predict("uay uay");
         Assert.assertEquals(null, case3);
+
+        String case4 = model.predict("tai xe");
+        Assert.assertEquals("tại..", case4); // first word is learned from second example
     }
 
     public void testLearn() throws Exception {
