@@ -68,6 +68,7 @@ public class CandidateView extends View {
     private Paint mPaint;
     private boolean mScrolled;
     private int mTargetScrollX;
+    private int mSavedScrollX;
     
     private int mTotalWidth;
     
@@ -216,7 +217,7 @@ public class CandidateView extends View {
             mWordX[i] = x;
             mWordWidth[i] = wordWidth;
             paint.setColor(mColorNormal);
-            if (touchX + scrollX >= x && touchX + scrollX < x + wordWidth && !scrolled) {
+            if (touchX != OUT_OF_BOUNDS && touchX + scrollX >= x && touchX + scrollX < x + wordWidth && !scrolled) {
                 if (canvas != null) {
                     canvas.translate(x, 0);
                     mSelectionHighlight.setBounds(0, bgPadding.top, wordWidth, height);
@@ -436,8 +437,9 @@ public class CandidateView extends View {
 
         mSecondarySuggestions = null;
 
-        scrollTo(0, 0);
-        mTargetScrollX = 0;
+        scrollTo(mSavedScrollX, 0);
+        mTargetScrollX = mSavedScrollX;
+        mTouchX = OUT_OF_BOUNDS;
         // Compute the total width
         internalDraw(null);
         invalidate();
@@ -468,6 +470,7 @@ public class CandidateView extends View {
         mFlingSuggestionIndex = 0;
         mFlingWordIndex = iWord;
 
+        mSavedScrollX = mTargetScrollX;
         scrollTo(0, 0);
         mTargetScrollX = 0;
         // Compute the total width
