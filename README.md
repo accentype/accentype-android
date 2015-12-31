@@ -5,4 +5,6 @@ Latin-based languages use the same alphabet as English with only difference bein
 
 Build Pre-requisites: Android Studio
 
+<img style="border: gray 1px solid;" width="480px" src="./screenshot.png"></img>
+
 This code is released under MIT license.
