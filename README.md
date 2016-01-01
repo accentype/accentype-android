@@ -5,8 +5,12 @@ Latin-based languages use the same alphabet as English with only difference bein
 
 Build Pre-requisites: Android Studio
 
-<img style="border: gray 1px solid;" width="480px" src="./screenshot.png"></img>
+**Release**
 
 Beta version is currently on Android Play Store but available only by request. To try it out, join accentype_beta_users google group.
+
+<img style="border: gray 1px solid;" width="480px" src="./screenshot.png"></img>
+
+**License**
 
 This code is released under MIT license.
