@@ -7,4 +7,6 @@ Build Pre-requisites: Android Studio
 
 <img style="border: gray 1px solid;" width="480px" src="./screenshot.png"></img>
 
+Beta version is currently on Android Play Store but available only by request. To try it out, join accentype_beta_users google group.
+
 This code is released under MIT license.
